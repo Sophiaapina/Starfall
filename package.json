@@ -1,0 +1,21 @@
+{
+  "name": "procedural-jetpack-joyride-lab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Internal greybox gameplay lab for studying endless-runner / jetpack-flight mechanics",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "verify": "tsc -p tsconfig.verify.json && node scripts/verify.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:pages": "npm run build && wrangler pages deploy ./dist --project-name jetpack-mechanics-lab --branch beta --commit-dirty=true"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.8",
+    "wrangler": "^4.138.0"
+  }
+}

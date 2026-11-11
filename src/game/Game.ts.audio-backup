@@ -1,0 +1,434 @@
+/**
+ * owns simulation state and the fixed step order
+ * ready -> running -> paused or dead, and restart always returns to ready
+ */
+
+import type { GameplayConfig } from "../config/gameplayConfig.js";
+import { Camera } from "./Camera.js";
+import { findCollision } from "./Collision.js";
+import { CoinSpawner } from "./CoinSpawner.js";
+import { computeDifficulty, worldSpeedAt } from "./Difficulty.js";
+import { Input } from "./Input.js";
+import { Obstacle, type EncounterTag } from "./Obstacle.js";
+import { Player } from "./Player.js";
+import { Spawner } from "./Spawner.js";
+import { World } from "./World.js";
+import { CoinPickupEffect } from "./CoinPickupEffect.js";
+
+export enum GameState {
+  READY = "READY",
+  RUNNING = "RUNNING",
+  PAUSED = "PAUSED",
+  DEAD = "DEAD",
+}
+
+export type PlayerTheme = "player" | "admin";
+export type ShopItem = "revive" | "shield" | "doubleCoins" | "booster";
+
+export interface ShopInventory {
+  revive: number;
+  shield: number;
+  doubleCoins: number;
+  booster: number;
+}
+
+const SHOP_PRICES: Record<ShopItem, number> = {
+  revive: 200,
+  shield: 150,
+  doubleCoins: 250,
+  booster: 300,
+};
+
+export interface DeathInfo {
+  obstacleId: number;
+  obstacleType: string;
+  playerVy: number;
+  worldSpeed: number;
+  distance: number;
+  difficulty: number;
+  spawnReactionTime: number;
+  /** search metadata of the obstacle that was hit; null for the weighted spawner */
+  encounter: EncounterTag | null;
+}
+
+/** debug layers controlled by F1 through F6 */
+export interface DebugFlags {
+  overlay: boolean;
+  colliders: boolean;
+  grid: boolean;
+  vectors: boolean;
+  trajectory: boolean;
+  telemetry: boolean;
+  /** encounter brackets, entry states, feasibility witness and agent traces */
+  encounters: boolean;
+}
+
+export class Game {
+  readonly world: World;
+  readonly camera = new Camera();
+  readonly player: Player;
+  readonly spawner: Spawner;
+  readonly coinSpawner: CoinSpawner;
+  readonly input = new Input();
+  readonly coinPickupEffect = new CoinPickupEffect();
+
+  obstacles: Obstacle[] = [];
+  state: GameState = GameState.READY;
+  private resumedFrom: GameState = GameState.READY;
+
+  time = 0;
+  difficulty = 0;
+  worldSpeed = 0;
+  deathInfo: DeathInfo | null = null;
+  coinsCollected = 0;
+  totalCoins = 0;
+  shopOpen = false;
+  shopMessage = "";
+  readonly shopInventory: ShopInventory;
+  coinMultiplier = 1;
+  private boosterSeconds = 0;
+  private shieldEnabledForRun = false;
+  private reviveEnabledForRun = false;
+
+  /** fixed steps executed in this run */
+  stepCount = 0;
+
+  playerTheme: PlayerTheme = "player";
+
+  debug: DebugFlags = {
+    overlay: true,
+    colliders: true,
+    grid: false,
+    vectors: true,
+    trajectory: false,
+    telemetry: false,
+    encounters: true,
+  };
+
+  constructor(readonly cfg: GameplayConfig) {
+    this.world = new World(cfg);
+    this.player = new Player(cfg, this.world);
+    this.spawner = new Spawner(cfg, this.world);
+    this.coinSpawner = new CoinSpawner(cfg, this.world);
+    this.totalCoins = this.loadTotalCoins();
+    this.shopInventory = this.loadShopInventory();
+    this.restart(cfg.seed);
+  }
+
+  /** reset all run state with the given seed */
+  restart(seed: number = this.cfg.seed): void {
+    this.cfg.seed = seed;
+    this.camera.x = 0;
+    this.time = 0;
+    this.difficulty = 0;
+    this.worldSpeed = this.cfg.worldStartSpeed;
+    this.obstacles = [];
+    this.deathInfo = null;
+    this.coinsCollected = 0;
+    this.shopOpen = false;
+    this.shopMessage = "";
+    this.coinMultiplier = 1;
+    this.boosterSeconds = 0;
+    this.shieldEnabledForRun = false;
+    this.reviveEnabledForRun = false;
+    this.stepCount = 0;
+    this.player.reset();
+    this.input.reset();
+    this.spawner.reset(seed);
+    this.coinSpawner.reset(seed);
+    this.state = GameState.READY;
+  }
+
+  restartWithRandomSeed(): number {
+    // Math.random only picks a new seed and never builds obstacle geometry
+    const seed = (Math.random() * 0x7fffffff) | 0;
+    this.restart(seed);
+    return seed;
+  }
+
+  start(): void {
+    if (this.state === GameState.READY && !this.shopOpen) {
+      this.state = GameState.RUNNING;
+    }
+  }
+
+  purchaseShopItem(item: ShopItem): boolean {
+    const price = SHOP_PRICES[item];
+    if (this.totalCoins < price) {
+      this.shopMessage = "NOT ENOUGH COINS";
+      return false;
+    }
+
+    this.totalCoins -= price;
+    this.shopInventory[item]++;
+    this.shopMessage = "PURCHASE COMPLETE";
+    this.saveTotalCoins();
+    this.saveShopInventory();
+    return true;
+  }
+
+  activatePowerup(item: ShopItem): boolean {
+    if (item === "revive" && this.state === GameState.DEAD) {
+      return this.reviveFromGameOver();
+    }
+    if (this.state !== GameState.RUNNING) return false;
+    if (this.shopInventory[item] < 1) {
+      this.shopMessage = "NO CHARGES";
+      return false;
+    }
+
+    switch (item) {
+      case "shield":
+        this.shieldEnabledForRun = !this.shieldEnabledForRun;
+        break;
+      case "revive":
+        this.reviveEnabledForRun = !this.reviveEnabledForRun;
+        break;
+      case "doubleCoins":
+        this.shopInventory.doubleCoins--;
+        this.coinMultiplier = 2;
+        this.saveShopInventory();
+  break;
+      case "booster":
+        this.shopInventory.booster--;
+        this.boosterSeconds += 6;
+        this.saveShopInventory();
+        break;
+    }
+    this.shopMessage = `${itemLabel(item)} ${this.isPowerupActive(item) ? "ACTIVE" : "OFF"}`;
+    return true;
+  }
+
+  reviveFromGameOver(): boolean {
+    const fatalObstacleId = this.deathInfo?.obstacleId;
+    if (this.state !== GameState.DEAD || fatalObstacleId === undefined || this.shopInventory.revive < 1) {
+      return false;
+    }
+
+    this.shopInventory.revive--;
+    this.reviveEnabledForRun = false;
+    this.obstacles = this.obstacles.filter((obstacle) => obstacle.id !== fatalObstacleId);
+    this.player.y = (this.world.ceilingY() + this.world.floorY() - this.cfg.playerHeight) / 2;
+    this.player.vy = 0;
+    this.player.ay = 0;
+    this.player.thrusting = false;
+    this.input.release();
+    this.deathInfo = null;
+    this.state = GameState.RUNNING;
+    this.saveShopInventory();
+    return true;
+  }
+
+  isPowerupActive(item: ShopItem): boolean {
+    switch (item) {
+      case "revive": return this.reviveEnabledForRun;
+      case "shield": return this.shieldEnabledForRun;
+      case "doubleCoins": return this.coinMultiplier === 2;
+      case "booster": return this.boosterSeconds > 0;
+    }
+  }
+
+getPowerupRemaining(item: ShopItem): number {
+  switch (item) {
+    case "doubleCoins":
+      return this.coinMultiplier === 2 ? Infinity : 0;
+    case "booster":
+      return this.boosterSeconds;
+
+    case "shield":
+      return this.shieldEnabledForRun ? Infinity : 0;
+
+    case "revive":
+      return this.reviveEnabledForRun ? Infinity : 0;
+  }
+}
+
+
+  setPlayerTheme(theme: PlayerTheme): void {
+    this.playerTheme = theme;
+  }
+
+  togglePause(): void {
+    if (this.state === GameState.PAUSED) {
+      this.state = this.resumedFrom;
+    } else if (this.state === GameState.RUNNING || this.state === GameState.READY) {
+      this.resumedFrom = this.state;
+      this.state = GameState.PAUSED;
+    }
+  }
+
+  /** pause if needed and advance one fixed step */
+  stepOnce(): void {
+    if (this.state === GameState.RUNNING) {
+      this.resumedFrom = GameState.RUNNING;
+      this.state = GameState.PAUSED;
+    }
+    if (this.state === GameState.PAUSED) this.simulate(this.cfg.fixedDt);
+  }
+
+  /** encounter search between frames; main passes a wall-clock budget, verification passes Infinity */
+  backgroundWork(maxMs: number): void {
+    this.spawner.backgroundWork(maxMs);
+  }
+
+  /** normal fixed step entry used by main */
+  step(dt: number): void {
+    if (this.state !== GameState.RUNNING && this.state !== GameState.READY) return;
+    this.simulate(dt);
+  }
+
+  private simulate(dt: number): void {
+    if (this.state === GameState.READY && this.shopOpen) {
+      this.input.release();
+      return;
+    }
+
+    // 1 input
+    this.input.update(dt);
+    const thrustHeld = this.input.isDown;
+
+    // ready keeps the world still until the first held input
+    if (this.state === GameState.READY) {
+      if (!thrustHeld) return;
+      this.state = GameState.RUNNING;
+    }
+
+    // 2 difficulty and world speed
+    this.difficulty = computeDifficulty(this.camera.x, this.cfg);
+    this.worldSpeed = worldSpeedAt(this.difficulty, this.cfg);
+    if (this.boosterSeconds > 0) {
+      this.worldSpeed *= 1.65;
+      this.boosterSeconds = Math.max(0, this.boosterSeconds - dt);
+    }
+
+
+    // 3 player physics
+    this.player.update(dt, thrustHeld);
+
+    // 4 world scroll
+    this.camera.x += this.worldSpeed * dt;
+    this.time += dt;
+
+    // 5 spawn and cleanup
+    this.spawner.update(this.camera.x, this.player.y, this.player.vy, this.worldSpeed, this.obstacles);
+    this.coinSpawner.update(this.obstacles, this.camera.x, this.player.y);
+ const pickups = this.coinSpawner.collectWithPositions(
+  this.player.rect(),
+  this.camera.x
+);
+
+const collected = pickups.length;
+
+this.coinsCollected += collected;
+
+if (collected > 0) {
+  const earned = collected * this.coinMultiplier;
+
+  this.coinsCollected += earned - collected;
+  this.totalCoins += earned;
+  this.saveTotalCoins();
+
+  for (const pickup of pickups) {
+    this.coinPickupEffect.spawn(
+      pickup.x,
+      pickup.y,
+      this.coinMultiplier
+    );
+  }
+
+    }
+    this.coinPickupEffect.update(dt);
+
+    if (this.obstacles.length > 0 && this.obstacles[0].isGone(this.camera.x)) {
+      // obstacles are ordered by world x, so only the first one can expire
+      this.obstacles.shift();
+    }
+
+    // 6 hazard collision and state update
+    const hit = findCollision(this.player.rect(), this.obstacles, this.camera.x, this.time);
+    if (hit) {
+      if (this.shieldEnabledForRun && this.shopInventory.shield > 0) {
+        this.shopInventory.shield--;
+        this.shieldEnabledForRun = false;
+        this.obstacles = this.obstacles.filter((obstacle) => obstacle.id !== hit.obstacle.id);
+        this.saveShopInventory();
+      } else if (this.reviveEnabledForRun && this.shopInventory.revive > 0) {
+        this.shopInventory.revive--;
+        this.reviveEnabledForRun = false;
+        this.obstacles = this.obstacles.filter((obstacle) => obstacle.id !== hit.obstacle.id);
+        this.deathInfo = null;
+        this.player.vy = 0;
+        this.saveShopInventory();
+      } else {
+        this.state = GameState.DEAD;
+        this.deathInfo = {
+          obstacleId: hit.obstacle.id,
+          obstacleType: hit.obstacle.type,
+          playerVy: this.player.vy,
+          worldSpeed: this.worldSpeed,
+          distance: this.camera.x,
+          difficulty: this.difficulty,
+          spawnReactionTime: hit.obstacle.spawnReactionTime,
+          encounter: hit.obstacle.encounter,
+        };
+      }
+    }
+
+    this.stepCount++;
+  }
+
+  private loadTotalCoins(): number {
+    try {
+      const saved = Number(localStorage.getItem("starfall-total-coins"));
+      return Number.isSafeInteger(saved) && saved >= 0 ? saved : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private saveTotalCoins(): void {
+    try {
+      localStorage.setItem("starfall-total-coins", String(this.totalCoins));
+    } catch {
+      // The run still counts coins if browser storage is unavailable.
+    }
+  }
+
+  private loadShopInventory(): ShopInventory {
+    const empty = { revive: 0, shield: 0, doubleCoins: 0, booster: 0 };
+    try {
+      const saved = JSON.parse(localStorage.getItem("starfall-shop-inventory") ?? "null") as Partial<ShopInventory> | null;
+      if (!saved) return empty;
+      return {
+        revive: validItemCount(saved.revive),
+        shield: validItemCount(saved.shield),
+        doubleCoins: validItemCount(saved.doubleCoins),
+        booster: validItemCount(saved.booster),
+      };
+    } catch {
+      return empty;
+    }
+  }
+
+  private saveShopInventory(): void {
+    try {
+      localStorage.setItem("starfall-shop-inventory", JSON.stringify(this.shopInventory));
+    } catch {
+      // Purchased effects remain available for the current session.
+    }
+  }
+
+}
+
+function itemLabel(item: ShopItem): string {
+  switch (item) {
+    case "revive": return "REVIVE";
+    case "shield": return "SHIELD";
+    case "doubleCoins": return "DOUBLE COINS";
+    case "booster": return "BOOSTER";
+  }
+}
+
+function validItemCount(value: unknown): number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+}

@@ -1,0 +1,140 @@
+import type { GameplayConfig } from "../config/gameplayConfig.js";
+import { aabbOverlap } from "./Collision.js";
+import type { Obstacle } from "./Obstacle.js";
+import type { AABB } from "./Player.js";
+import { SeededRandom } from "./Random.js";
+import type { World } from "./World.js";
+
+export interface Coin {
+  id: number;
+  worldX: number;
+  centerY: number;
+  size: number;
+  collected: boolean;
+}
+
+export class CoinSpawner {
+  readonly coins: Coin[] = [];
+  private rng = new SeededRandom(1);
+  private nextObstacleId = 1;
+  private previousObstacleEndX = 0;
+  private nextCoinId = 1;
+
+  constructor(private cfg: GameplayConfig, private world: World) {}
+
+  reset(seed: number): void {
+    this.rng = new SeededRandom((seed ^ 0xa511e9b3) >>> 0);
+    this.coins.length = 0;
+    this.nextObstacleId = 1;
+    this.previousObstacleEndX = 0;
+    this.nextCoinId = 1;
+  }
+
+  update(obstacles: Obstacle[], cameraX: number, playerY: number): void {
+    for (const obstacle of obstacles) {
+      if (obstacle.id < this.nextObstacleId) continue;
+
+      this.placeForObstacle(obstacle, cameraX, playerY);
+      this.previousObstacleEndX = obstacle.worldX + obstacle.width;
+      this.nextObstacleId = obstacle.id + 1;
+    }
+
+    for (let index = this.coins.length - 1; index >= 0; index--) {
+      const coin = this.coins[index];
+      if (coin.collected || coin.worldX + coin.size / 2 < cameraX - 40) this.coins.splice(index, 1);
+    }
+  }
+
+  collect(player: AABB, cameraX: number): number {
+    let collected = 0;
+    for (const coin of this.coins) {
+      if (coin.collected) continue;
+      const rect = this.getScreenRect(coin, cameraX);
+      if (!aabbOverlap(player, rect)) continue;
+      coin.collected = true;
+      collected++;
+    }
+    return collected;
+  }
+  collectWithPositions(
+  player: AABB,
+  cameraX: number
+): { id: number; x: number; y: number; size: number }[] {
+  const pickups: {
+    id: number;
+    x: number;
+    y: number;
+    size: number;
+  }[] = [];
+
+  for (const coin of this.coins) {
+    if (coin.collected) continue;
+
+    const rect = this.getScreenRect(coin, cameraX);
+
+    if (!aabbOverlap(player, rect)) continue;
+
+    coin.collected = true;
+
+    pickups.push({
+      id: coin.id,
+      x: coin.worldX - cameraX,
+      y: coin.centerY,
+      size: coin.size,
+    });
+  }
+
+  return pickups;
+}
+
+  getScreenRect(coin: Coin, cameraX: number): AABB {
+    return {
+      x: coin.worldX - cameraX - coin.size / 2,
+      y: coin.centerY - coin.size / 2,
+      w: coin.size,
+      h: coin.size,
+    };
+  }
+
+  private placeForObstacle(obstacle: Obstacle, cameraX: number, playerY: number): void {
+    const size = 34;
+    const radius = size / 2;
+    const minimumX = Math.max(
+      this.previousObstacleEndX + radius + 24,
+      cameraX + this.cfg.playerScreenX + this.cfg.playerWidth / 2 + 220,
+    );
+    const maximumX = obstacle.worldX - radius - 120;
+    if (maximumX - minimumX < 36) return;
+
+    const intervals = obstacle.freeIntervals(0, 0, this.world, this.cfg.playerHeight, true);
+    if (!intervals.length) return;
+    intervals.sort((a, b) => distanceToInterval(playerY, a) - distanceToInterval(playerY, b));
+
+    const [minY, maxY] = intervals[0];
+    const reachableTop = clamp(playerY, minY, maxY);
+    const minCenterY = minY + this.cfg.playerHeight / 2;
+    const maxCenterY = maxY + this.cfg.playerHeight / 2;
+    const targetCenterY = reachableTop + this.cfg.playerHeight / 2;
+    const centerY = this.rng.range(
+      Math.max(minCenterY, targetCenterY - 22),
+      Math.min(maxCenterY, targetCenterY + 22),
+    );
+    const worldX = this.rng.range(minimumX, maximumX);
+
+    this.coins.push({
+      id: this.nextCoinId++,
+      worldX,
+      centerY: clamp(centerY, this.world.ceilingY() + radius, this.world.floorY() - radius),
+      size,
+      collected: false,
+    });
+  }
+}
+
+function distanceToInterval(value: number, interval: [number, number]): number {
+  return value < interval[0] ? interval[0] - value : value > interval[1] ? value - interval[1] : 0;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
