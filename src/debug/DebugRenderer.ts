@@ -6,6 +6,10 @@ import { ObstacleType } from "../game/Obstacle.js";
 import { predictedHit, predictScreenPath } from "./TrajectoryPredictor.js";
 import type { Telemetry } from "./Telemetry.js";
 
+const assetPath = (path: string): string =>
+  `${import.meta.env.BASE_URL}${path}`;
+
+
 const COLORS = {
   gridMinor: "#1b1f27",
   gridMajor: "#252b36",
@@ -194,29 +198,29 @@ export class DebugRenderer {
     } catch {
       this.bestScore = 0;
     }
-    this.background.src = "/assets/background/alien_background.png";
-    this.ground.src = "/assets/environment/alien_ground.png";
-    this.astronaut.src = "/assets/player/astronaut.png";
-    this.scoreImage.src = "/assets/ui/score.png";
-    this.coinImage.src = "/assets/effects/coin.png";
-    this.adminImage.src = "/assets/ui/admin.png";
-    this.titleImage.src = "/assets/ui/tittle.png";
-    this.howToPlayImage.src = "/assets/ui/how_to_play.png";
-    this.shopImage.src = "/assets/ui/shop.png";
-    this.blankBarImage.src = "/assets/ui/blanck_bar.png";
-    this.bestScorePanelImage.src = "/assets/ui/bestscore_panel.png";
-    this.startButtonImage.src = "/assets/ui/start_game_button.png";
-    this.gameOverImage.src = "/assets/ui/gameover.png";
-    this.restartButtonImage.src = "/assets/ui/restart_button.png";
-    this.pauseButtonImage.src = "/assets/ui/Puase_button.png";
-    this.musicButtonImage.src = "/assets/ui/music.png";
-    this.soundButtonImage.src = "/assets/ui/sonido.png";
-    this.playPauseImage.src = "/assets/ui/play_pause.png";
-    this.pauseRestartImage.src = "/assets/ui/restart.png";
-    this.laserEmitterImage.src = "/assets/obstacles/obstaculos_png/obstacles_09_emisor_laser.png";
+    this.background.src = assetPath("assets/background/alien_background.png");
+    this.ground.src = assetPath("assets/environment/alien_ground.png");
+    this.astronaut.src = assetPath("assets/player/astronaut.png");
+    this.scoreImage.src = assetPath("assets/ui/score.png");
+    this.coinImage.src = assetPath("assets/effects/coin.png");
+    this.adminImage.src = assetPath("assets/ui/admin.png");
+    this.titleImage.src = assetPath("assets/ui/tittle.png");
+    this.howToPlayImage.src = assetPath("assets/ui/how_to_play.png");
+    this.shopImage.src = assetPath("assets/ui/shop.png");
+    this.blankBarImage.src = assetPath("assets/ui/blanck_bar.png");
+    this.bestScorePanelImage.src = assetPath("assets/ui/bestscore_panel.png");
+    this.startButtonImage.src = assetPath("assets/ui/start_game_button.png");
+    this.gameOverImage.src = assetPath("assets/ui/gameover.png");
+    this.restartButtonImage.src = assetPath("assets/ui/restart_button.png");
+    this.pauseButtonImage.src = assetPath("assets/ui/Puase_button.png");
+    this.musicButtonImage.src = assetPath("assets/ui/music.png");
+    this.soundButtonImage.src = assetPath("assets/ui/sonido.png");
+    this.playPauseImage.src = assetPath("assets/ui/play_pause.png");
+    this.pauseRestartImage.src = assetPath("assets/ui/restart.png");
+    this.laserEmitterImage.src = assetPath("assets/obstacles/obstaculos_png/obstacles_09_emisor_laser.png");
     const powerupButton = (normal: string, selected: string) => ({
-      normal: this.loadObstacleImage(`/assets/effects/botones_powerups/${normal}`),
-      selected: this.loadObstacleImage(`/assets/effects/botones_powerups/${selected}`),
+      normal: this.loadObstacleImage(assetPath(`assets/effects/botones_powerups/${normal}`)),
+      selected: this.loadObstacleImage(assetPath(`assets/effects/botones_powerups/${selected}`)),
     });
     this.powerupButtonImages = {
       revive: powerupButton("boton_1_revive_normal.png", "boton_1_revive_seleccionado.png"),
@@ -226,11 +230,11 @@ export class DebugRenderer {
     };
     for (let i = 1; i <= 19; i++) {
       const img = new Image();
-      img.src = `/assets/player/astronautas_png/recortados/astronauta_${String(i).padStart(2, "0")}.png`;
+      img.src = assetPath(`assets/player/astronautas_png/recortados/astronauta_${String(i).padStart(2, "0")}.png`);
       this.astronautFrames.push(img);
     }
 
-    const obstacleAsset = (name: string) => `/assets/obstacles/obstaculos_png/${name}`;
+    const obstacleAsset = (name: string) => assetPath(`assets/obstacles/obstaculos_png/${name}`);
     const sprites = (names: string[]) => names.map((name) => this.loadObstacleImage(obstacleAsset(name)));
     this.obstacleSprites[ObstacleType.GATE] = sprites([
       "obstacles_03_compuerta_laser.png",

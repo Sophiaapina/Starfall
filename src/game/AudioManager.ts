@@ -1,15 +1,18 @@
 type SoundEffect = "coin" | "collision" | "fail" | "powerup" | "click";
 
+const assetPath = (path: string): string =>
+  `${import.meta.env.BASE_URL}${path}`;
+
 export class AudioManager {
-  private music = new Audio("/assets/audio/atmosphere.mp3");
-  private nitro = new Audio("/assets/audio/nitro.mp3");
+  private music = new Audio(assetPath("assets/audio/atmosphere.mp3"));
+  private nitro = new Audio(assetPath("assets/audio/nitro.mp3"));
 
   private effects: Record<SoundEffect, string> = {
-    coin: "/assets/audio/coin.mp3",
-    collision: "/assets/audio/collision.mp3",
-    fail: "/assets/audio/fail.mp3",
-    powerup: "/assets/audio/powerup.mp3",
-    click: "/assets/audio/click.mp3",
+    coin: assetPath("assets/audio/coin.mp3"),
+    collision: assetPath("assets/audio/collision.mp3"),
+    fail: assetPath("assets/audio/fail.mp3"),
+    powerup: assetPath("assets/audio/powerup.mp3"),
+    click: assetPath("assets/audio/click.mp3"),
   };
 
   private unlocked = false;
