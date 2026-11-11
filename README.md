@@ -1,144 +1,205 @@
-# jetpack mechanics lab
+# STARFALL 🚀
 
-This is a browser lab for one button flight and endless runner math.
+**A procedural jetpack adventure across an alien world.**
 
-The project is a greybox tool. It is here to make physics, spawning, collision,
-difficulty, and debug state easy to inspect. It does not try to copy the art,
-branding, sound, or level content of another game.
+Starfall is a browser-based endless runner where players pilot an astronaut through a dangerous alien environment using a jetpack. Dodge obstacles, collect coins, activate power-ups, and survive as the challenge gets progressively harder.
 
-## run it
+The game combines physics-based movement, procedural generation, obstacle encounters, collectible rewards, and power-ups in a fast-paced arcade experience.
+
+## 🎮 Play Starfall
+
+**Play online:** https://sophiaapina.github.io/Starfall/
+
+## ✨ Features
+
+- **Jetpack gameplay:** One-button flight controls with gravity, thrust, and responsive movement.
+- **Procedural generation:** Obstacles and coin placements are generated dynamically.
+- **Progressive difficulty:** The challenge evolves as the player travels farther.
+- **Coin collection:** Gather coins during each run and use them in the in-game shop.
+- **Power-ups:**
+  - Shield: Protect yourself from collisions.
+  - Revive: Get another chance after failing.
+  - Double Coins: Increase the value of collected coins.
+  - Booster: Activate additional propulsion.
+- **Game progression:** Track distance, score, and best runs.
+- **Audio:** Background music, sound effects, and booster audio.
+- **Visual effects:** Animated game elements, particle effects, and visual feedback.
+- **Debug tools:** Inspect physics, collisions, trajectories, and procedural encounters.
+
+## 🚀 Run locally
+
+Requirements:
+- Node.js
+- npm
+
+Install dependencies:
 
 ```sh
 npm install
+```
+
+Start the development server:
+
+```sh
 npm run dev
 ```
 
-Use `npm run build` for the production build and `npm run verify` for the
-headless simulation checks.
+Build for production:
 
-## controls
+```sh
+npm run build
+```
 
-| input | result |
+Run simulation checks:
+
+```sh
+npm run verify
+```
+
+## 🕹️ Controls
+
+| Input | Action |
 |---|---|
-| space, pointer, or touch held | thrust |
-| release | gravity only |
-| F1 | debug overlay |
-| F2 | colliders |
-| F3 | physics vectors |
-| F4 | trajectory preview |
-| F5 | telemetry graphs |
-| F6 | encounter overlay: brackets, entry states, witness, agent traces |
-| P | pause or resume |
-| . | one fixed step |
-| R | restart with the same seed |
+| Space | Activate jetpack |
+| Mouse click | Activate jetpack |
+| Touch | Activate jetpack |
+| Release input | Let gravity take over |
+| F1 | Toggle debug overlay |
+| F2 | Show colliders |
+| F3 | Show physics vectors |
+| F4 | Show trajectory preview |
+| F5 | Show telemetry graphs |
+| F6 | Show encounter information |
+| P | Pause / Resume |
+| . | Advance one simulation step |
+| R | Restart the run |
 
-The panel also has slow motion, simulation speed, presets, seed control, and
-JSON config import and export.
+The debug panel also provides slow motion, simulation speed, physics presets, seed control, and JSON configuration import/export.
 
-## encounter search
+## 🪙 Coins and power-ups
 
-By default obstacles arrive as **encounters** of two to four obstacles chosen
-by agent-evaluated evolutionary search: candidates are generated from
-motifs and random legal genomes, gated by a whole-sequence feasibility search
-from five incoming states, flown by strong / intermediate / novice planners,
-scored against the current pacing phase (WARMUP → BUILD → PEAK → RECOVERY),
-and the best feasible one is committed ahead of the player. Searches run a
-few milliseconds per frame; the result never depends on timing. The panel
-section **Encounter search** switches back to the v0.1 weighted spawner,
-swaps evolution for equal-budget random search, and shows why each winner was
-chosen. `AGENT.md` explains the simulated player; `MECHANICS.md` §18–§27
-has the equations.
+Coins are collectible rewards generated throughout the game. Players can accumulate coins and spend them in the shop.
 
-During `npm run dev`, **Candidate lab · DEV** opens a separate generation and
-agent inspector. View six grammar/parameter alternatives before testing, inspect
-their construction witnesses, test with a bounded HOLD/RELEASE beam-search agent,
-and step or replay the recorded path and input timeline. It snapshots live tuning
-when generating and is excluded from production builds. This first experiment
-does not yet feed the endless spawner or perform evolutionary selection; see
-MECHANICS.md for the construction equations and limitations.
+Power-ups introduce additional gameplay possibilities and help players survive longer runs.
 
-## source map
+## 🌌 Procedural encounter generation
+
+Starfall includes a procedural encounter system designed to create challenging and playable obstacle sequences.
+
+The system uses:
+- Procedural obstacle generation.
+- Seeded random streams.
+- Evolutionary search and candidate evaluation.
+- Feasibility validation across multiple player skill profiles.
+- Difficulty pacing phases: WARMUP → BUILD → PEAK → RECOVERY.
+- Encounter scheduling and buffering.
+
+Each encounter is evaluated before being introduced into the game world.
+
+The debug panel includes an **Encounter Search** section for inspecting the generation process and comparing search strategies.
+
+## 🧪 Development tools
+
+During development, `npm run dev` enables **Candidate Lab · DEV**, a separate inspector for procedural generation.
+
+It allows developers to:
+- Generate alternative obstacle configurations.
+- Inspect construction witnesses.
+- Test candidates using simulated player agents.
+- Replay recorded paths and input timelines.
+- Compare different generation parameters.
+
+This tool is excluded from production builds.
+
+## 🏗️ Project structure
 
 ```text
 src/
   config/
-    gameplayConfig.ts   live tuning values and math helpers
-    presets.ts          physics-only presets
+    gameplayConfig.ts
+    presets.ts
+
   game/
-    Game.ts             state machine and fixed step order
-    Physics.ts          vertical integration
-    Player.ts           player state and corridor contact
-    Camera.ts           world to screen conversion
-    World.ts            floor and ceiling geometry
-    Obstacle.ts         obstacle data and screen rectangles
-    Spawner.ts          seeded distance-based generation
-    Difficulty.ts       distance curve and interpolated values
-    Validator.ts        reaction and reachability checks
-    Trajectory.ts       future simulation shared by debug and validation
-    Collision.ts        manual AABB tests
-    Input.ts            one button state and timers
-    Random.ts           seeded random stream
+    Game.ts
+    Physics.ts
+    Player.ts
+    Camera.ts
+    World.ts
+    Obstacle.ts
+    Spawner.ts
+    Difficulty.ts
+    Validator.ts
+    Trajectory.ts
+    Collision.ts
+    Input.ts
+    Random.ts
+
     procedural/
-      Encounter.ts      headless simulation (same step order and collision as Game)
+      Encounter.ts
       EncounterGenome.ts
-                        genes, legal bounds, mutation, crossover, realization, cheap gates
-      RandomStreams.ts  hash(master, encounter, generation, slot) seeds
-      PatternLibrary.ts safe motifs and the verified fallback
-      Pacing.ts         WARMUP / BUILD / PEAK / RECOVERY targets
+      RandomStreams.ts
+      PatternLibrary.ts
+      Pacing.ts
       SequenceValidator.ts
-                        entry states and whole-sequence feasibility with witnesses
       AgentController.ts
-                        receding-horizon beam-search player, three skill profiles
-      Fitness.ts        measurements and the fitness equation
+      Fitness.ts
       DiversityArchive.ts
-                        novelty against recent encounters
       SearchGenerator.ts
-                        bounded evolutionary search, resumable, deterministic
       EncounterScheduler.ts
-                        searches ahead, buffers, commits into the world
       CandidateGenerator.ts
-                        dev-only grammar alternatives for the Candidate lab
+
   debug/
-    DebugRenderer.ts    canvas debug layers
-    DebugPanel.ts       live DOM controls
-    Telemetry.ts        fixed step sample buffer
+    DebugRenderer.ts
+    DebugPanel.ts
+    Telemetry.ts
     TrajectoryPredictor.ts
-                        screen projection and predicted hits
-    CandidateLab.ts     development-only generation, testing and replay inspector
-  main.ts               browser input, accumulator, render loop
-  style.css             greybox lab layout
+    CandidateLab.ts
+
+  game/
+    AudioManager.ts
+
+  main.ts
+  style.css
+
+assets/
+  audio/
+  background/
+  effects/
+  environment/
+  obstacles/
+  player/
+  ui/
 ```
 
-The game and config folders do not use browser APIs. `scripts/verify.mjs`
-compiles those folders and runs them in Node. This boundary keeps the core easy
-to test and easier to move into an engine later.
+## 📚 Technical documentation
 
-## documents
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — Project architecture, dependencies, coordinates, and simulation flow.
+- [MECHANICS.md](./MECHANICS.md) — Physics equations, gameplay parameters, and procedural generation.
+- [AGENT.md](./AGENT.md) — Simulated player agents used to evaluate encounters.
+- [TASK_LOG.md](./TASK_LOG.md) — Design and implementation milestones.
+- [DEVLOG.md](./DEVLOG.md) — Development history and verification.
+- [AGENTS.md](./AGENTS.md) — Original project brief and implementation rules.
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) explains ownership, dependencies,
-  coordinates, state, and one simulation step.
-- [MECHANICS.md](./MECHANICS.md) explains the math, tuning values, engine
-  translation, and experiments.
-- [AGENT.md](./AGENT.md) explains the simulated player that tests encounters,
-  first in plain terms, then step by step.
-- [TASK_LOG.md](./TASK_LOG.md) tracks the design-document milestones.
-- [DEVLOG.md](./DEVLOG.md) records how the current version was built and
-  checked.
-- [AGENTS.md](./AGENTS.md) is the original project brief and implementation
-  rules.
+## ⚙️ Core engineering principles
 
-## main rules
+- Physics uses a fixed time step (`dt`).
+- Rendering does not modify simulation state.
+- The player stays at a fixed horizontal screen position.
+- Obstacles maintain fixed world-space coordinates.
+- Procedural generation uses seeded random streams.
+- Trajectory prediction shares the same physics integration as live gameplay.
+- Encounter validation checks feasibility without silently modifying obstacle sequences.
+- Search results remain deterministic.
+- Gameplay tuning values are centralized in `gameplayConfig.ts`.
 
-- physics receives a fixed `dt`
-- rendering does not write simulation state
-- the player stays at one screen x
-- obstacles keep fixed world x values
-- one seeded random stream owns generation
-- prediction reuses the same vertical integrator as live play
-- the validator marks bad setups but does not rewrite the obstacle sequence
-- a searched encounter is committed only after passing the feasibility gates
-- search slices use wall time but never change the chosen encounter
-- every live gameplay value starts in `gameplayConfig.ts`
+## 🛠️ Built with
 
-These rules are small on purpose. They make a run traceable from input to
-render without hiding the useful math.
+- TypeScript
+- HTML5 Canvas
+- CSS
+- Vite
+- Node.js
+
+---
+
+**STARFALL** — Explore the unknown. Master the jetpack. Survive the fall.
