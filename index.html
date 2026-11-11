@@ -1,34 +1,81 @@
+
 <!doctype html>
 <html lang="en">
   <head>
+    <title>STARFALL</title>
+    <meta name="description" content="STARFALL — Explore the unknown. Master the jetpack. Survive the fall.">
 
-<title>STARFALL</title>
-<meta name="description" content="STARFALL — Explore the unknown. Master the jetpack. Survive the fall.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="STARFALL">
+    <meta property="og:description" content="Explore the unknown. Master the jetpack. Survive the fall.">
+    <meta property="og:url" content="https://sophiaapina.github.io/Starfall/">
+    <meta property="og:image" content="https://sophiaapina.github.io/Starfall/starfall-icon.png">
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="STARFALL">
-<meta property="og:description" content="Explore the unknown. Master the jetpack. Survive the fall.">
-<meta property="og:url" content="https://sophiaapina.github.io/Starfall/">
-<meta property="og:image" content="https://sophiaapina.github.io/Starfall/starfall-icon.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="STARFALL">
+    <meta name="twitter:description" content="Explore the unknown. Master the jetpack. Survive the fall.">
+    <meta name="twitter:image" content="https://sophiaapina.github.io/Starfall/starfall-icon.png">
 
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="STARFALL">
-<meta name="twitter:description" content="Explore the unknown. Master the jetpack. Survive the fall.">
-<meta name="twitter:image" content="https://sophiaapina.github.io/Starfall/starfall-icon.png">
+    <link rel="icon" type="image/png" href="%BASE_URL%starfall-icon.png">
+    <link rel="apple-touch-icon" href="%BASE_URL%starfall-icon.png">
 
-<link rel="icon" type="image/png" href="%BASE_URL%starfall-icon.png">
-<link rel="apple-touch-icon" href="%BASE_URL%starfall-icon.png">
-
-
-
-<link rel="icon" type="image/png" href="%BASE_URL%starfall-icon.png">
-<link rel="apple-touch-icon" href="%BASE_URL%starfall-icon.png">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
+
     <link rel="stylesheet" href="/src/style.css" />
+
+    <style>
+      #rotate-message {
+        display: none;
+      }
+
+      @media screen and (orientation: portrait) and (max-width: 900px) {
+        #rotate-message {
+          position: fixed;
+          inset: 0;
+          z-index: 999999;
+          background: #080817;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          font-family: sans-serif;
+        }
+
+        #rotate-message .phone {
+          font-size: 65px;
+          animation: rotate-phone 2s ease-in-out infinite;
+        }
+
+        #rotate-message h2 {
+          color: #00eaff;
+          letter-spacing: 8px;
+          margin-bottom: 10px;
+        }
+
+        #rotate-message p {
+          color: #b8c7df;
+          font-size: 14px;
+          letter-spacing: 2px;
+        }
+
+        @keyframes rotate-phone {
+          0%, 20% { transform: rotate(0deg); }
+          70%, 100% { transform: rotate(90deg); }
+        }
+      }
+    </style>
   </head>
+
   <body>
+    <div id="rotate-message">
+      <div class="phone">📱</div>
+      <h2>STARFALL</h2>
+      <p>ROTATE YOUR DEVICE TO PLAY</p>
+    </div>
+
     <div id="app">
       <div id="stage">
         <canvas id="game" width="960" height="600"></canvas>
@@ -39,6 +86,7 @@
       </div>
       <aside id="panel"></aside>
     </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
