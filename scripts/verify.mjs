@@ -588,6 +588,7 @@ function searchChain(cfg, seed, count, strategy = "evolve") {
   const run = (budgetMs, steps) => {
     const cfg = defaultConfig();
     cfg.seed = 2024;
+    cfg.encounterMode = 1; // slicing only exists in search mode, whatever the shipped default is
     const g = new Game(cfg);
     const placed = [];
     const orig = g.spawner.update.bind(g.spawner);
@@ -719,7 +720,7 @@ function searchChain(cfg, seed, count, strategy = "evolve") {
   const [rec2] = searchChain(empty, 5, 1);
   assert.match(rec2.fallback ?? "", /EMPTY_GAP/, "an empty gap when even the fallback fails");
   assert.equal(rec2.obstacles.length, 0);
-  const g = new Game({ ...defaultConfig(), seed: 5, minObstacleGapTime: 5.0 });
+  const g = new Game({ ...defaultConfig(), encounterMode: 1, seed: 5, minObstacleGapTime: 5.0 });
   g.input.isDown = true;
   for (let i = 0; i < 600; i++) { g.step(g.cfg.fixedDt); g.backgroundWork(Infinity); }
   assert.ok(g.spawner.scheduler.stats.fallbacks >= 2 && g.state !== GameState.DEAD, "the game keeps running on empty fallbacks");

@@ -10,5 +10,5 @@
     "outDir": "dist-verify",
     "noEmit": false
   },
-  "include": ["src/game", "src/config"]
+  "include": ["src/game", "src/config", "src/vite-env.d.ts"]
 }
