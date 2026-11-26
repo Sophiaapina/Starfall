@@ -5,7 +5,7 @@
 
 import { defaultConfig, type GameplayConfig } from "../config/gameplayConfig.js";
 import { PRESETS } from "../config/presets.js";
-import { Game } from "../game/Game.js";
+import { Game, type DebugFlags } from "../game/Game.js";
 
 interface SliderDef {
   key: keyof GameplayConfig;
@@ -113,6 +113,7 @@ export class DebugPanel {
   private modeButton!: HTMLButtonElement;
   private ghostButton!: HTMLButtonElement;
   private strategyButton!: HTMLButtonElement;
+  private overlayButtons: Array<{ key: keyof DebugFlags; label: string; shortcut: string; btn: HTMLButtonElement }> = [];
 
   constructor(
     private root: HTMLElement,
@@ -129,6 +130,7 @@ export class DebugPanel {
     this.root.appendChild(h1);
 
     this.buildSimSection();
+    this.buildOverlaySection();
     this.buildPlayerStyleSection();
     for (const sec of SECTIONS) this.buildSliderSection(sec.title, sec.sliders);
     this.buildSearchSection();
@@ -176,6 +178,41 @@ export class DebugPanel {
     this.statusEl = document.createElement("div");
     this.statusEl.className = "status-line";
     s.appendChild(this.statusEl);
+  }
+
+  /** clickable equivalents of F1-F7 so laptops / touch devices don't need Fn keys */
+  private buildOverlaySection(): void {
+    const s = this.section("View overlays (no Fn keys)");
+    const defs: Array<{ key: keyof DebugFlags; label: string; shortcut: string }> = [
+      { key: "overlay", label: "overlay", shortcut: "F1" },
+      { key: "colliders", label: "colliders", shortcut: "F2" },
+      { key: "vectors", label: "vectors", shortcut: "F3" },
+      { key: "trajectory", label: "trajectory", shortcut: "F4" },
+      { key: "telemetry", label: "telemetry", shortcut: "F5" },
+      { key: "encounters", label: "encounters", shortcut: "F6" },
+      { key: "grid", label: "grid", shortcut: "F7" },
+    ];
+    const row = this.btnRow(s);
+    for (const d of defs) {
+      const b = this.btn(row, "", () => {
+        this.game.debug[d.key] = !this.game.debug[d.key];
+        this.refreshOverlayButtons();
+      });
+      this.overlayButtons.push({ ...d, btn: b });
+    }
+    const note = document.createElement("div");
+    note.className = "status-line";
+    note.textContent = "Same flags as F1–F7. Encounters = brackets + witness + strong/intermediate/novice agent paths.";
+    s.appendChild(note);
+    this.refreshOverlayButtons();
+  }
+
+  private refreshOverlayButtons(): void {
+    for (const { key, label, shortcut, btn } of this.overlayButtons) {
+      const on = this.game.debug[key];
+      btn.textContent = `${label} (${shortcut}): ${on ? "ON" : "OFF"}`;
+      btn.classList.toggle("active", on);
+    }
   }
 
   /** encounter search: generator switch, budget sliders, live search inspection, record export */
@@ -395,6 +432,7 @@ export class DebugPanel {
       this.ghostButton.textContent = `Ghosts: ${this.game.cfg.ghosts >= 1 ? "ON" : "OFF"}`;
     }
     this.markSpeedButtons();
+    this.refreshOverlayButtons();
   }
 
   /** live search inspection: what is being searched, what was chosen, and why */
@@ -434,6 +472,7 @@ export class DebugPanel {
   /** refresh status text at the panel update rate */
   tick(): void {
     const g = this.game;
+    this.refreshOverlayButtons();
     this.statusEl.innerHTML =
       `state <b>${g.state}</b> · seed <b>${g.cfg.seed}</b> · timeScale <b>${this.loop.timeScale}x</b> · ` +
       `distance <b>${g.camera.x.toFixed(0)}px</b> · difficulty <b>${g.difficulty.toFixed(3)}</b>`;

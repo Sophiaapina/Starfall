@@ -92,6 +92,34 @@ body.player-view canvas#game {
 body.player-view #hint,
 body.player-view #panel { display: none; }
 
+/* player view: scale the 960x600 canvas to fill the viewport, letterboxed to keep 16:10 */
+body.player-view {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #080817;
+}
+
+body.player-view #app {
+  height: 100%;
+  padding: 0;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+body.player-view #stage {
+  width: auto;
+  max-width: none;
+}
+
+body.player-view canvas#game {
+  width: min(100vw, 100vh * 1.6);
+  width: min(100vw, 100dvh * 1.6);
+  height: auto;
+  border: none;
+}
+
 #panel {
   flex: 1 1 340px;
   max-width: 460px;
