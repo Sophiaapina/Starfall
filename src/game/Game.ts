@@ -9,6 +9,7 @@ import { findCollision } from "./Collision.js";
 import { CoinSpawner } from "./CoinSpawner.js";
 import { computeDifficulty, worldSpeedAt } from "./Difficulty.js";
 import { Input } from "./Input.js";
+import { mapPlace } from "./MapLook.js";
 import { Obstacle, type EncounterTag } from "./Obstacle.js";
 import { Player, PlayerState } from "./Player.js";
 import { Spawner } from "./Spawner.js";
@@ -199,7 +200,7 @@ export class Game {
   /** fixed steps executed in this run */
   stepCount = 0;
   /** seed of the next random run, known early so its opening can be searched before the retry */
-  private nextSeed = randomSeed();
+  private nextSeed = 0;
 
   playerTheme: PlayerTheme = "player";
 
@@ -222,6 +223,8 @@ export class Game {
     this.bestScore = this.loadBestScore();
     this.shopInventory = this.loadShopInventory();
     this.restart(cfg.seed);
+    // the first death already has a different planet waiting; the results screen can search its opening
+    this.nextSeed = differentPlaceSeed(cfg.seed);
   }
 
   /** reset all run state with the given seed */
@@ -257,9 +260,10 @@ export class Game {
     this.state = GameState.READY;
   }
 
+  /** a new seed and a new map: the next planet is a different one from the run just left */
   restartWithRandomSeed(): number {
     const seed = this.nextSeed;
-    this.nextSeed = randomSeed();
+    this.nextSeed = differentPlaceSeed(seed);
     this.restart(seed);
     return seed;
   }
@@ -676,9 +680,17 @@ export class Game {
 
 }
 
-/** Math.random only picks a seed and never builds obstacle geometry */
+/** Math.random only picks a seed and never builds obstacle geometry or the map */
 function randomSeed(): number {
   return (Math.random() * 0x7fffffff) | 0;
+}
+
+/** a seed whose planet is not `avoid`'s, so a death does not drop the player back on the same map */
+function differentPlaceSeed(avoid: number): number {
+  const place = mapPlace(avoid);
+  let seed = randomSeed();
+  for (let i = 0; i < 24 && mapPlace(seed) === place; i++) seed = randomSeed();
+  return seed;
 }
 
 function validItemCount(value: unknown): number {

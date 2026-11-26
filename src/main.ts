@@ -45,6 +45,9 @@ view.onCue = (cue) => {
   if (cue === "newBest") {
     audio.play("sting");
     audio.duck(0.45, 1.6);
+  } else if (cue === "ghostPop") {
+    // a test pilot's flight ended on a hazard just ahead: a small fizz, well under the player's own sounds
+    audio.play("zap", { volume: 0.22, rate: 1.9, spread: 0.1 });
   }
 };
 

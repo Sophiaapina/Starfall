@@ -22,6 +22,7 @@ The game combines physics-based movement, procedural generation, obstacle encoun
   - Double Coins: Every coin is worth double for one run.
   - Booster: Start the run with a short invincible burst that smashes through hazards.
 - **Game progression:** Track distance, score, and best runs.
+- **Ghosts:** The AI test pilots that check each stretch of the level before you reach it fly ahead of you as ghosts, along the paths they tested.
 - **Audio:** Menu and in-run music that reacts to the run, a jetpack sound, and feedback sounds for coins, near misses, landings and hits.
 - **Visual effects:** Animated game elements, particle effects, and visual feedback.
 - **Debug tools:** Inspect physics, collisions, trajectories, and procedural encounters.
@@ -100,6 +101,8 @@ The system uses:
 
 Each encounter is evaluated before being introduced into the game world.
 
+The test flights are kept, and the game replays them as three ghosts (one per skill profile) flying ahead of the player. A ghost bursts where its test flight hit a hazard and returns with the next encounter.
+
 The debug panel includes an **Encounter Search** section for inspecting the generation process and comparing search strategies.
 
 ## 🧪 Development tools
@@ -150,6 +153,7 @@ src/
       DiversityArchive.ts
       SearchGenerator.ts
       EncounterScheduler.ts
+      GhostTracks.ts
       CandidateGenerator.ts
 
   render/
@@ -157,6 +161,7 @@ src/
     WorldLayer.ts
     HazardKit.ts
     PlayerSprite.ts
+    GhostLayer.ts
     Effects.ts
     Hud.ts
     Menus.ts
@@ -181,6 +186,7 @@ src/
 art/
   player/
   hazards/
+  ghost/
   audio/
 
 assets/

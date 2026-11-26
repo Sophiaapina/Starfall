@@ -57,6 +57,8 @@ tuning is part of the lab. The next fixed step reads those new values.
 | what happens between the fatal hit and the results | `Game.simulateCrash` |
 | what the player sees | `src/render/GameRenderer.ts` and the layers it owns (`WorldLayer`, `PlayerSprite`, `Effects`, `Hud`, `Menus`) |
 | how a hazard of any height is drawn from pieces | `src/render/HazardKit.ts` |
+| which test flight a ghost replays and where it is | `src/game/procedural/GhostTracks.ts` |
+| how a ghost looks and when it appears, bursts or hides | `src/render/GhostLayer.ts` |
 | where buttons and panels sit | `src/render/layout.ts` |
 | what the player hears | `src/audio/AudioEngine.ts` |
 | what the lab view adds on top | `src/debug/DebugRenderer.ts` |
@@ -148,6 +150,22 @@ power-up, land, takeoff, bounce, crash end. `main.ts` drains the list after
 every step and passes each event to the renderer and the audio engine.
 Nothing in an event feeds back into a later step, so a headless run and a
 browser run stay identical.
+
+## ghosts
+
+Every searched encounter keeps the recorded flight of each agent profile.
+`GhostTrack` replays one profile's flights by camera position: per encounter
+it takes the flight that starts closest to where its previous one ended, and
+it reports the flight as over where the agent hit a hazard. `GhostLayer`
+draws three of them a fixed distance ahead of the player. They are drawing
+only: nothing reads them back, and the headless check asserts that a flying
+ghost reproduces its recorded flight step for step and never overlaps a
+hazard.
+
+Ghosts hide while the booster burns. A flight through moving hazards is only
+shown while the run's clock matches the clock it was tested at; after a
+booster burst the two differ, so ghosts sit out encounters that contain
+moving hazards for the rest of that run.
 
 ## state
 

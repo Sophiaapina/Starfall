@@ -1,0 +1,48 @@
+{
+  "image": "ghost.png",
+  "cellWidth": 96,
+  "cellHeight": 96,
+  "columns": 8,
+  "rows": 5,
+  "anchor": {
+    "x": 54,
+    "y": 44
+  },
+  "animations": [
+    {
+      "row": 0,
+      "name": "float",
+      "frames": 8,
+      "frameDurationMs": 110,
+      "loop": true
+    },
+    {
+      "row": 1,
+      "name": "rise",
+      "frames": 4,
+      "frameDurationMs": 90,
+      "loop": true
+    },
+    {
+      "row": 2,
+      "name": "fall",
+      "frames": 4,
+      "frameDurationMs": 90,
+      "loop": true
+    },
+    {
+      "row": 3,
+      "name": "pop",
+      "frames": 6,
+      "frameDurationMs": 70,
+      "loop": false
+    },
+    {
+      "row": 4,
+      "name": "appear",
+      "frames": 6,
+      "frameDurationMs": 70,
+      "loop": false
+    }
+  ]
+}

@@ -80,6 +80,8 @@ export interface GameplayConfig {
   // encounter search (agent evaluated procedural generation)
   /** 0 = weighted baseline spawner, 1 = evolutionary encounter search; restart to apply */
   encounterMode: number;
+  /** 1 = the search's test pilots fly ahead of the player as ghosts; needs encounterMode 1; drawing only */
+  ghosts: number;
   /** candidates evaluated per generation */
   searchPopulation: number;
   /** generations per encounter; population × generations is the fixed evaluation budget */
@@ -140,7 +142,8 @@ export function defaultConfig(): GameplayConfig {
     movingHazardAmplitude: 90,
     minReactionTime: 0.8,
 
-    encounterMode: 0,
+    encounterMode: 1,
+    ghosts: 1,
     searchPopulation: 8,
     searchGenerations: 3,
     searchElites: 2,

@@ -30,6 +30,8 @@ import { AGENT_PROFILES } from "../dist-verify/game/procedural/AgentController.j
 import { measure, runProfiles, scoreCandidate } from "../dist-verify/game/procedural/Fitness.js";
 import { DiversityArchive } from "../dist-verify/game/procedural/DiversityArchive.js";
 import { SearchRun, budgetFromConfig, nextEntryStates } from "../dist-verify/game/procedural/SearchGenerator.js";
+import { GhostTrack } from "../dist-verify/game/procedural/GhostTracks.js";
+import { mapLook, mapPlace } from "../dist-verify/game/MapLook.js";
 
 let passed = 0;
 function ok(name) {
@@ -49,6 +51,32 @@ function ok(name) {
   assert.notDeepStrictEqual(seqA, seqC, "different seed -> different stream");
   assert.ok(seqA.every((v) => v >= 0 && v < 1), "values in [0,1)");
   ok("SeededRandom determinism + range");
+}
+
+// a seed is a map: the opening seed keeps the painted planet, any other seed is another place
+{
+  const home = mapLook(12345);
+  assert.deepStrictEqual(home, mapLook(12345), "same seed -> same map");
+  assert.equal(home.place, 0, "opening seed stays on the painted planet");
+  assert.equal(home.hue, 0);
+  assert.equal(home.flip, false);
+  assert.equal(home.backdropPhase, 0);
+  assert.equal(home.groundPhase, 0);
+
+  const other = mapLook(999);
+  assert.notDeepStrictEqual(other, home, "a different seed is a different map");
+  const places = new Set(Array.from({ length: 80 }, (_, i) => mapPlace(i + 1)));
+  assert.equal(places.size, 4, "seeds land on every planet");
+
+  const cfg = defaultConfig();
+  const g = new Game(cfg);
+  const first = g.cfg.seed;
+  const next = g.restartWithRandomSeed();
+  assert.notEqual(next, first, "dying starts a new seed");
+  assert.notEqual(mapPlace(next), mapPlace(first), "the new seed is a different planet");
+  g.restart(first);
+  assert.equal(g.cfg.seed, first, "replaying a seed returns to its own map");
+  ok("a new seed is a new map, and the opening seed stays the painted planet");
 }
 
 // deterministic replay and spawn order
@@ -920,6 +948,116 @@ function searchChain(cfg, seed, count, strategy = "evolve") {
   assert.ok(peak.completion.novice < pacingTarget("RECOVERY", 0.8).completion.novice, "peak expects fewer novice completions than recovery");
   assert.ok(peak.allowMoving && !pacingTarget("RECOVERY", 0.8).allowMoving);
   ok("pacing: WARMUP once, then BUILD → PEAK → RECOVERY repeating with phase-specific targets");
+}
+
+// ghosts replay the search's own test flights
+{
+  const cfg = { ...defaultConfig(), encounterMode: 1, seed: 21 };
+  const world = new World(cfg);
+  const spawner = new Spawner(cfg, world);
+  spawner.reset(21);
+  const records = [];
+  for (let cameraX = 0; cameraX < 9000; cameraX += 40) {
+    spawner.backgroundWork(Infinity);
+    spawner.update(cameraX, 280, 0, cfg.worldStartSpeed, []);
+    for (const r of spawner.scheduler.committed) if (!records.includes(r)) records.push(r);
+  }
+  assert.ok(records.length >= 4, `several encounters were searched (${records.length})`);
+  for (let i = 1; i < records.length; i++) assert.equal(records[i].startCameraX, records[i - 1].endCameraX, "encounters are consecutive in camera space");
+
+  const first = records[0].startCameraX;
+  const last = records[records.length - 1].endCameraX;
+  let crashes = 0;
+  let flights = 0;
+  for (const profile of AGENT_PROFILES) {
+    const track = new GhostTrack(profile.name);
+    assert.equal(track.sample(records, first - 1), null, "no ghost before the first tested encounter");
+    assert.equal(track.sample(records, last), null, "no ghost past the last tested encounter");
+
+    // every recorded step of the chosen flight is reproduced exactly, and the flight is one the search really ran
+    for (const record of records) {
+      const mid = track.sample(records, (record.startCameraX + record.endCameraX) / 2);
+      assert.equal(mid.encounter, record.index);
+      if (!record.rollouts) continue;
+      const mine = record.rollouts.filter((r) => r.profile === profile.name);
+      const atStart = track.sample(records, record.startCameraX);
+      const flight = mine.find((r) => r.trace[0].y === atStart.y);
+      assert.ok(flight, `${profile.name} E${record.index}: the ghost starts on one of the tested entry states`);
+      flights++;
+      for (const frame of flight.trace) {
+        if (frame.cameraX >= record.endCameraX) continue; // the closing step already belongs to the next encounter
+        const s = track.sample(records, frame.cameraX);
+        if (frame.hitId !== null) {
+          assert.equal(s.flying, false, "the ghost is gone from the step its flight hit a hazard");
+          assert.deepStrictEqual(s.crash, { cameraX: frame.cameraX, y: frame.y, hitId: frame.hitId });
+          crashes++;
+          continue;
+        }
+        assert.equal(s.flying, true);
+        assert.equal(s.y, frame.y, `${profile.name} E${record.index} step ${frame.step}: y matches the recorded flight`);
+        // and that position is clear of every hazard of the encounter, by the game's own collision test
+        const player = { x: cfg.playerScreenX, y: s.y, w: cfg.playerWidth, h: cfg.playerHeight };
+        for (const o of record.obstacles) {
+          for (const r of o.getRects(frame.cameraX, frame.time)) assert.ok(!aabbOverlap(player, r), "a flying ghost never overlaps a hazard");
+        }
+      }
+      if (flight.completed) assert.equal(track.sample(records, record.endCameraX - 0.001).flying, true);
+      else assert.equal(track.sample(records, record.endCameraX - 0.001).flying, false, "a crashed ghost stays gone until the next encounter");
+    }
+
+    // between two recorded steps the ghost is between their heights
+    const record = records.find((r) => r.rollouts);
+    const probe = track.sample(records, record.startCameraX);
+    const flight = record.rollouts.find((r) => r.profile === profile.name && r.trace[0].y === probe.y);
+    const [a, b] = [flight.trace[3], flight.trace[4]];
+    const between = track.sample(records, (a.cameraX + b.cameraX) / 2);
+    assert.ok(between.y >= Math.min(a.y, b.y) - 1e-9 && between.y <= Math.max(a.y, b.y) + 1e-9);
+
+    // the same flights whatever order the samples are asked in, and with only a window of the encounters
+    const backwards = new GhostTrack(profile.name);
+    for (let i = records.length - 1; i >= 0; i--) {
+      const x = (records[i].startCameraX + records[i].endCameraX) / 2;
+      assert.deepStrictEqual(backwards.sample(records, x), track.sample(records, x), "sampling order does not change the flight");
+    }
+    const live = new GhostTrack(profile.name);
+    for (let i = 0; i < records.length; i++) {
+      const window = records.slice(Math.max(0, i - 2), i + 2);
+      const x = (records[i].startCameraX + records[i].endCameraX) / 2;
+      assert.deepStrictEqual(live.sample(window, x), track.sample(records, x), "a sliding window of encounters gives the same flight");
+    }
+  }
+  assert.ok(flights > 0);
+
+  // a test flight that ended in a hit: the ghost stops there and comes back with the next encounter
+  {
+    const at = records.findIndex((r) => r.rollouts);
+    const cut = 40;
+    const failed = {
+      ...records[at],
+      rollouts: records[at].rollouts.map((r) => ({
+        ...r, completed: false, hitId: 7,
+        trace: r.trace.slice(0, cut).map((f, i) => (i === cut - 1 ? { ...f, hitId: 7 } : f)),
+      })),
+    };
+    const list = records.map((r, i) => (i === at ? failed : r));
+    const track = new GhostTrack("novice");
+    const start = track.sample(list, failed.startCameraX);
+    const flight = failed.rollouts.find((r) => r.profile === "novice" && r.trace[0].y === start.y);
+    const hit = flight.trace[cut - 1];
+    assert.equal(track.sample(list, flight.trace[cut - 2].cameraX).flying, true, "still flying one step before the hit");
+    const gone = track.sample(list, hit.cameraX);
+    assert.equal(gone.flying, false);
+    assert.deepStrictEqual(gone.crash, { cameraX: hit.cameraX, y: hit.y, hitId: 7 });
+    assert.equal(track.sample(list, failed.endCameraX - 0.001).flying, false, "a crashed ghost stays gone until the next encounter");
+    const next = list[at + 1];
+    const back = track.sample(list, next.startCameraX);
+    assert.equal(back.flying, true, "it returns with the next encounter");
+    const entryYs = next.rollouts.filter((r) => r.profile === "novice").map((r) => r.trace[0].y).sort((x, y) => x - y);
+    assert.equal(back.y, entryYs[Math.floor((entryYs.length - 1) / 2)], "and starts from the middle entry state");
+    crashes++;
+  }
+  console.log(`     ${records.length} encounters, ${flights} ghost flights, ${crashes} ended in a hit`);
+  ok("ghosts: each one replays a real test flight step for step, clear of hazards, and stops where the agent hit");
 }
 
 console.warn = quiet;

@@ -6,6 +6,7 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from "../config/gameplayConfig.js";
 import { GameState, type Game, type GameEvent } from "../game/Game.js";
 import { Effects, FX } from "./Effects.js";
+import { GhostLayer } from "./GhostLayer.js";
 import { Hud, POWERUP_COLORS, POWERUP_NAMES } from "./Hud.js";
 import { Menus, NEW_BEST_AT, NEW_BEST_STAMP } from "./Menus.js";
 import { PlayerSprite } from "./PlayerSprite.js";
@@ -15,16 +16,19 @@ export class GameRenderer {
   readonly fx = new Effects();
   private world: WorldLayer;
   private player: PlayerSprite;
+  private ghosts: GhostLayer;
   private hud: Hud;
   private menus: Menus;
   private lastStepCount = 0;
   private bestStamped = false;
   /** moments that have a sound but are not simulation events */
-  onCue: ((cue: "newBest") => void) | null = null;
+  onCue: ((cue: "newBest" | "ghostPop") => void) | null = null;
 
   constructor(private game: Game, isMusicEnabled: () => boolean, isSoundEnabled: () => boolean) {
     this.world = new WorldLayer(game);
     this.player = new PlayerSprite(game, this.fx);
+    this.ghosts = new GhostLayer(game);
+    this.ghosts.onPop = () => this.onCue?.("ghostPop");
     this.hud = new Hud(game, isMusicEnabled, isSoundEnabled);
     this.menus = new Menus(game, this.hud);
   }
@@ -97,6 +101,7 @@ export class GameRenderer {
     this.lastStepCount = this.game.stepCount;
 
     this.fx.update(dt);
+    this.ghosts.update(dt);
     this.player.update(dt);
     this.hud.update(dt);
 
@@ -123,6 +128,7 @@ export class GameRenderer {
     this.world.drawGround(ctx);
     this.world.drawObstacles(ctx);
     this.world.drawCoins(ctx);
+    this.ghosts.draw(ctx);
     this.fx.drawBack(ctx);
     this.player.draw(ctx);
     this.fx.drawFront(ctx);

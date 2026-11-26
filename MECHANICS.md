@@ -412,6 +412,7 @@ All in `src/config/gameplayConfig.ts`, all live-editable in the panel.
 | `openingMin` / `openingMax` | 150 / 260 | required precision (player is 44 px tall) |
 | `minReactionTime` | 0.8 s | fairness floor enforced by the validator |
 | `encounterMode` | 1 | 0 = weighted v0.1 spawner, 1 = encounter search (§24) |
+| `ghosts` | 1 | 1 = the search's test flights are replayed as ghosts ahead of the player; drawing only |
 | `searchPopulation` × `searchGenerations` | 8 × 3 | fixed evaluation budget per encounter |
 | `searchElites` | 2 | feasible genomes copied unchanged each generation |
 | `entryStateCount` / `entryCoverage` | 5 / 0.8 | incoming states tested, fraction that must have a safe path |

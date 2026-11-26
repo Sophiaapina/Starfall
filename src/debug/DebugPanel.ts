@@ -111,6 +111,7 @@ export class DebugPanel {
   private searchStatusEl!: HTMLDivElement;
   private searchExportBox!: HTMLTextAreaElement;
   private modeButton!: HTMLButtonElement;
+  private ghostButton!: HTMLButtonElement;
   private strategyButton!: HTMLButtonElement;
 
   constructor(
@@ -203,6 +204,10 @@ export class DebugPanel {
     this.modeButton = this.btn(row, "", () => {
       g.cfg.encounterMode = g.cfg.encounterMode >= 1 ? 0 : 1;
       g.restart(g.cfg.seed);
+      this.refreshInputs();
+    });
+    this.ghostButton = this.btn(row, "", () => {
+      g.cfg.ghosts = g.cfg.ghosts >= 1 ? 0 : 1;
       this.refreshInputs();
     });
     this.strategyButton = this.btn(row, "", () => {
@@ -387,6 +392,7 @@ export class DebugPanel {
     if (this.modeButton) {
       this.modeButton.textContent = this.game.cfg.encounterMode >= 1 ? "Generator: SEARCH (encounters)" : "Generator: WEIGHTED (v0.1 baseline)";
       this.strategyButton.textContent = `Strategy: ${this.game.spawner.scheduler.strategy.toUpperCase()}`;
+      this.ghostButton.textContent = `Ghosts: ${this.game.cfg.ghosts >= 1 ? "ON" : "OFF"}`;
     }
     this.markSpeedButtons();
   }

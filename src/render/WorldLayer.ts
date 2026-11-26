@@ -2,6 +2,7 @@
 
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from "../config/gameplayConfig.js";
 import type { Game } from "../game/Game.js";
+import { mapLook, type MapLook } from "../game/MapLook.js";
 import { ObstacleType, type Obstacle } from "../game/Obstacle.js";
 import type { AABB } from "../game/Player.js";
 import { HazardKit, type HazardShape } from "./HazardKit.js";
@@ -29,8 +30,6 @@ const COIN_TEXTURE = 96;
 
 /** rows of the ground strip that hold its picture, and the row that sits on the floor line */
 const GROUND_BAND = { y: 160, h: 80, floor: 200 };
-/** the colour distant things fade toward: the dimmed backdrop */
-const HAZE = "#120e30";
 /**
  * rows of the same ground farther away, far to near: each is smaller, slower and hazier than the next,
  * so the dark strip between the painted horizon and the floor reads as ground receding into the distance
@@ -47,12 +46,7 @@ const GLOW_SHIFT = 4000;
 /** seconds before a hazard scrolls into view that its warning appears on the right edge */
 const TELEGRAPH_SECONDS = 0.75;
 
-interface Star {
-  x: number;
-  y: number;
-  size: number;
-  phase: number;
-}
+type Painted = HTMLImageElement | HTMLCanvasElement;
 
 export class WorldLayer {
   private background = loadImage("assets/background/alien_background.png");
@@ -61,22 +55,18 @@ export class WorldLayer {
   private laserEmitterImage = loadImage(`${OBSTACLE_DIR}obstacles_09_emisor_laser.png`);
   private obstacleSprites: Record<ObstacleType, HTMLImageElement[]>;
   private kit = new HazardKit();
+  /** the map of the current seed; rebuilt when a death starts a new one */
+  private look: MapLook | null = null;
+  /** backdrop and ground recoloured for that map; the source images stay as painted */
+  private paintedBackdrop: Painted | null = null;
+  private paintedGround: Painted | null = null;
   /** the ground strip's picture faded toward the haze, one canvas per midground row */
   private midground: HTMLCanvasElement[] | null = null;
   /** the coin's face and its flat edge-coloured silhouette, built once the painting has loaded */
   private coinFace: HTMLCanvasElement | null = null;
   private coinEdge: HTMLCanvasElement | null = null;
-  private stars: Star[] = [];
 
   constructor(private game: Game) {
-    for (let i = 0; i < 70; i++) {
-      this.stars.push({
-        x: Math.random() * CANVAS_WIDTH,
-        y: Math.random() * CANVAS_HEIGHT * 0.5,
-        size: Math.random() < 0.2 ? 2 : 1,
-        phase: Math.random() * Math.PI * 2,
-      });
-    }
     const sprites = (names: string[]) => names.map((name) => loadImage(OBSTACLE_DIR + name));
     this.obstacleSprites = {
       [ObstacleType.GATE]: sprites(["obstacles_03_compuerta_laser.png"]),
@@ -98,44 +88,65 @@ export class WorldLayer {
     };
   }
 
+  /** the current seed's map, and painted copies of the backdrop and ground once those images have loaded */
+  private syncLook(): MapLook {
+    const seed = this.game.cfg.seed >>> 0;
+    if (!this.look || this.look.seed !== seed) {
+      this.look = mapLook(seed);
+      this.paintedBackdrop = null;
+      this.paintedGround = null;
+      this.midground = null;
+    }
+    if (!this.paintedBackdrop && ready(this.background)) this.paintedBackdrop = paint(this.background, this.look);
+    if (!this.paintedGround && ready(this.ground)) {
+      this.paintedGround = paint(this.ground, this.look);
+      this.midground = null;
+    }
+    return this.look;
+  }
+
   /** sky, the far layer scrolling at 15% of the world speed and dimmed so the play layer stands out, then the receding ground */
   drawBackground(ctx: CanvasRenderingContext2D): void {
+    const look = this.syncLook();
     const sky = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT * 0.62);
-    sky.addColorStop(0, "#07061c");
-    sky.addColorStop(1, "#231a55");
+    sky.addColorStop(0, look.skyTop);
+    sky.addColorStop(1, look.skyBottom);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     const drift = this.game.camera.x * 0.03;
-    ctx.fillStyle = "#dfe6ff";
-    for (const star of this.stars) {
+    ctx.fillStyle = look.star;
+    for (const star of look.stars) {
       const x = (((star.x - drift) % CANVAS_WIDTH) + CANVAS_WIDTH) % CANVAS_WIDTH;
       ctx.globalAlpha = 0.35 + 0.3 * Math.sin(this.game.time * 1.7 + star.phase);
       ctx.fillRect(x, star.y, star.size, star.size);
     }
     ctx.globalAlpha = 1;
 
-    const img = this.background;
-    if (!ready(img)) return;
+    const img = this.paintedBackdrop;
+    if (img) {
+      const { width: sourceWidth, height: sourceHeight } = pixelSize(img);
+      const scale = Math.max(CANVAS_WIDTH / sourceWidth, CANVAS_HEIGHT / sourceHeight);
+      const width = sourceWidth * scale;
+      const height = sourceHeight * scale;
+      // each seed begins at its own landmark, then the panorama drifts with the camera
+      const offset = (this.game.camera.x * 0.15 + look.backdropPhase * width) % width;
 
-    const scale = Math.max(CANVAS_WIDTH / img.naturalWidth, CANVAS_HEIGHT / img.naturalHeight);
-    const width = img.naturalWidth * scale;
-    const height = img.naturalHeight * scale;
-    const offset = (this.game.camera.x * 0.15) % width;
+      ctx.drawImage(img, -offset, 0, width, height);
+      ctx.drawImage(img, width - offset, 0, width, height);
 
-    ctx.drawImage(img, -offset, 0, width, height);
-    ctx.drawImage(img, width - offset, 0, width, height);
+      ctx.fillStyle = look.wash;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
 
-    ctx.fillStyle = "rgba(9, 7, 30, 0.34)";
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-    this.drawMidground(ctx);
+    this.drawMidground(ctx, look);
   }
 
   /** distant rows of the ground strip, each scrolling slower than the one in front of it */
-  private drawMidground(ctx: CanvasRenderingContext2D): void {
-    if (!ready(this.ground)) return;
-    this.midground ??= MIDGROUND.map((row) => hazed(this.ground, row.haze));
+  private drawMidground(ctx: CanvasRenderingContext2D, look: MapLook): void {
+    const ground = this.paintedGround;
+    if (!ground) return;
+    this.midground ??= MIDGROUND.map((row) => hazed(ground, row.haze, look.haze));
 
     const floorY = this.game.world.floorY();
     MIDGROUND.forEach((row, i) => {
@@ -143,7 +154,7 @@ export class WorldLayer {
       const width = image.width * row.scale;
       const height = image.height * row.scale;
       const y = floorY - row.lift - (GROUND_BAND.floor - GROUND_BAND.y) * row.scale;
-      const offset = (this.game.camera.x * row.speed + row.start) % width;
+      const offset = (this.game.camera.x * row.speed + row.start + look.groundPhase) % width;
       for (let x = -offset; x < CANVAS_WIDTH; x += width) {
         ctx.drawImage(image, x, y, width, height);
       }
@@ -152,13 +163,13 @@ export class WorldLayer {
 
   /** ground strip centred on the floor line, scrolling with the world */
   drawGround(ctx: CanvasRenderingContext2D): void {
-    const img = this.ground;
-    if (!ready(img)) return;
+    const look = this.syncLook();
+    const img = this.paintedGround;
+    if (!img) return;
 
-    const width = img.naturalWidth;
-    const height = img.naturalHeight;
+    const { width, height } = pixelSize(img);
     const y = this.game.world.floorY() - height / 2;
-    const offset = this.game.camera.x % width;
+    const offset = (this.game.camera.x + look.groundPhase) % width;
 
     for (let x = -offset; x < CANVAS_WIDTH; x += width) {
       ctx.drawImage(img, x, y, width, height);
@@ -341,17 +352,39 @@ function pickOf(obs: Obstacle): number {
 }
 
 /** the picture band of the ground strip with every pixel moved `amount` of the way toward the haze colour */
-function hazed(ground: HTMLImageElement, amount: number): HTMLCanvasElement {
+function hazed(ground: Painted, amount: number, haze: string): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
-  canvas.width = ground.naturalWidth;
+  canvas.width = pixelSize(ground).width;
   canvas.height = GROUND_BAND.h;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(ground, 0, -GROUND_BAND.y);
   ctx.globalCompositeOperation = "source-atop";
   ctx.globalAlpha = amount;
-  ctx.fillStyle = HAZE;
+  ctx.fillStyle = haze;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   return canvas;
+}
+
+/** the painted planet shifted into this map's colours; the original art is returned unchanged when the map is home */
+function paint(image: HTMLImageElement, look: MapLook): Painted {
+  if (look.hue === 0 && !look.flip) return image;
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const ctx = canvas.getContext("2d")!;
+  if (look.hue !== 0) ctx.filter = `hue-rotate(${look.hue}deg)`;
+  if (look.flip) {
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(image, 0, 0);
+  return canvas;
+}
+
+function pixelSize(image: Painted): { width: number; height: number } {
+  return image instanceof HTMLCanvasElement
+    ? { width: image.width, height: image.height }
+    : { width: image.naturalWidth, height: image.naturalHeight };
 }
 
 /** the coin painting reduced to drawing size; with `tint` every opaque pixel becomes that colour */
