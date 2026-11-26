@@ -16,11 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -46,6 +42,19 @@ jobs:
         with:
           path: ./dist
 
+  # deploy-pages lists the run's artifacts through a service that can lag the
+  # upload by a few seconds (actions/deploy-pages#451). Uploading in a separate
+  # job means the listing is warm by the time this job starts, and a re-run of
+  # only this job is safe because it never uploads a second artifact.
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Deploy website
         id: deployment
         uses: actions/deploy-pages@v4
