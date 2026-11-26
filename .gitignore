@@ -35,3 +35,7 @@ pnpm-debug.log*
 # Local-only AI/agent files
 AGENTS.md
 .claude/
+
+# Python build leftovers from the art scripts
+__pycache__/
+*.pyc

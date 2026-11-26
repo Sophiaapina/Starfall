@@ -29,6 +29,8 @@ export class Spawner {
   rejectedLog: string[] = [];
   readonly scheduler: EncounterScheduler;
   private lastMode = -1;
+  /** the opening of the next run, searched while the results screen is up */
+  private standby: { scheduler: EncounterScheduler; key: string } | null = null;
 
   constructor(private cfg: GameplayConfig, private world: World) {
     this.scheduler = new EncounterScheduler(cfg);
@@ -45,12 +47,36 @@ export class Spawner {
     this.nextId = 1;
     this.rejectedLog = [];
     this.lastMode = this.cfg.encounterMode;
-    this.scheduler.reset(seed, FIRST_SPAWN_X, 1, this.searchMode);
+    const standby = this.standby;
+    this.standby = null;
+    // a pre-searched opening is used only if it was searched for exactly this seed and config
+    if (standby && this.searchMode && standby.key === JSON.stringify(this.cfg)) this.scheduler.adopt(standby.scheduler);
+    else this.scheduler.reset(seed, FIRST_SPAWN_X, 1, this.searchMode);
   }
 
-  /** search work between frames; wall-clock budget only, never a result change */
-  backgroundWork(maxMs: number): void {
-    if (this.searchMode) this.scheduler.backgroundWork(maxMs);
+  /**
+   * start searching the opening of the run that will use `seed`, so a retry straight
+   * from the results screen does not wait for its first encounter
+   */
+  prepare(seed: number): void {
+    if (!this.searchMode) return;
+    const cfg = { ...this.cfg, seed };
+    const key = JSON.stringify(cfg);
+    if (this.standby?.key === key) return;
+    const scheduler = new EncounterScheduler(cfg);
+    scheduler.strategy = this.scheduler.strategy;
+    scheduler.reset(seed, FIRST_SPAWN_X, 1, true);
+    this.standby = { scheduler, key };
+  }
+
+  /**
+   * search work between frames; wall-clock budget only, never a result change
+   * `nextRun` spends the budget on the prepared opening instead of the current run
+   */
+  backgroundWork(maxMs: number, nextRun = false): void {
+    if (!this.searchMode) return;
+    if (nextRun && this.standby) this.standby.scheduler.backgroundWork(maxMs);
+    else this.scheduler.backgroundWork(maxMs);
   }
 
   /** append every obstacle inside the current spawn horizon */

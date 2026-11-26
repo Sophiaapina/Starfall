@@ -3,7 +3,7 @@
 import { strict as assert } from "node:assert";
 
 import { defaultConfig } from "../dist-verify/config/gameplayConfig.js";
-import { Game, GameState } from "../dist-verify/game/Game.js";
+import { BOOSTER_SECONDS, Game, GameState } from "../dist-verify/game/Game.js";
 import { aabbOverlap } from "../dist-verify/game/Collision.js";
 import { integrateVertical } from "../dist-verify/game/Physics.js";
 import { SeededRandom } from "../dist-verify/game/Random.js";
@@ -125,7 +125,8 @@ function runScripted(seed, steps, encounterMode = 0) {
     "the opening three challenges retain their geometry",
   );
   const third = paced.obstacles[2];
-  const scheduledSpeed = 320 + (760 - 320) * (third.worldX - 180) / 12000;
+  // the speed the curve schedules at the third obstacle, whatever the shipped ramp is
+  const scheduledSpeed = worldSpeedAt(computeDifficulty(third.worldX - paced.cfg.playerScreenX, paced.cfg), paced.cfg);
   const extraGap = paced.obstacles[3].worldX - baseline.obstacles[3].worldX;
   assert.ok(Math.abs(extraGap / scheduledSpeed - 0.75) < 1e-9,
     "first recovery adds the requested travel-time budget between #3 and #4");
@@ -588,6 +589,7 @@ function searchChain(cfg, seed, count, strategy = "evolve") {
   const run = (budgetMs, steps) => {
     const cfg = defaultConfig();
     cfg.seed = 2024;
+    cfg.encounterMode = 1; // slicing only exists in search mode, whatever the shipped default is
     const g = new Game(cfg);
     const placed = [];
     const orig = g.spawner.update.bind(g.spawner);
@@ -658,8 +660,10 @@ function searchChain(cfg, seed, count, strategy = "evolve") {
     const spawner = new Spawner(wcfg, world);
     spawner.reset(seed);
     const obstacles = [];
-    wcfg.spawnAheadDistance = 7000;
-    spawner.update(0, 280, 0, wcfg.worldStartSpeed, obstacles);
+    // four chunks of three, however far apart the shipped ramp spaces them
+    for (wcfg.spawnAheadDistance = 7000; obstacles.length < 12; wcfg.spawnAheadDistance += 2000) {
+      spawner.update(0, 280, 0, wcfg.worldStartSpeed, obstacles);
+    }
     let previousExits = [];
     const archive = new DiversityArchive(6);
     for (let index = 0; index < 4; index++) {
@@ -719,11 +723,163 @@ function searchChain(cfg, seed, count, strategy = "evolve") {
   const [rec2] = searchChain(empty, 5, 1);
   assert.match(rec2.fallback ?? "", /EMPTY_GAP/, "an empty gap when even the fallback fails");
   assert.equal(rec2.obstacles.length, 0);
-  const g = new Game({ ...defaultConfig(), seed: 5, minObstacleGapTime: 5.0 });
+  const g = new Game({ ...defaultConfig(), encounterMode: 1, seed: 5, minObstacleGapTime: 5.0 });
   g.input.isDown = true;
   for (let i = 0; i < 600; i++) { g.step(g.cfg.fixedDt); g.backgroundWork(Infinity); }
   assert.ok(g.spawner.scheduler.stats.fallbacks >= 2 && g.state !== GameState.DEAD, "the game keeps running on empty fallbacks");
   ok(`fallback policy: ${rec.fallback} · ${rec2.fallback}`);
+}
+
+// the difficulty ramp, the loadout and what each power-up does
+{
+  const base = defaultConfig();
+  assert.equal(computeDifficulty(0, base), 0);
+  assert.equal(computeDifficulty(base.difficultyDistance, base), 1);
+  assert.equal(computeDifficulty(base.difficultyDistance * 3, base), 1, "difficulty stays at its maximum after the ramp");
+  let previous = -1;
+  for (let i = 0; i <= 50; i++) {
+    const d = computeDifficulty((base.difficultyDistance * i) / 50, base);
+    assert.ok(d > previous, "difficulty rises for the whole ramp");
+    previous = d;
+  }
+  assert.ok(Math.abs(computeDifficulty(base.difficultyDistance / 2, base) - 0.75) < 1e-9, "the ramp eases out: three quarters of the way at half the distance");
+
+  const eventsOf = (g, into) => { for (const e of g.consumeEvents()) into.push(e); };
+  const cruiseAt = (g) => worldSpeedAt(computeDifficulty(g.camera.x, g.cfg), g.cfg);
+
+  // loadout: only owned items, only before the run, spent when it begins
+  const boosted = new Game({ ...defaultConfig(), seed: 11 });
+  assert.equal(boosted.toggleLoadout("booster"), false, "an item that is not owned cannot be picked");
+  boosted.shopInventory.booster = 2;
+  boosted.shopInventory.shield = 1;
+  assert.ok(boosted.toggleLoadout("booster") && boosted.toggleLoadout("shield"));
+  assert.ok(boosted.toggleLoadout("shield") && !boosted.loadout.shield, "a second press drops the pick");
+  boosted.start();
+  assert.equal(boosted.state, GameState.RUNNING);
+  assert.deepStrictEqual([boosted.shopInventory.booster, boosted.shopInventory.shield], [1, 1], "only the picked item is spent");
+  assert.equal(boosted.loadout.booster, false, "the pick does not carry over to the next run");
+  assert.equal(boosted.toggleLoadout("booster"), false, "the loadout is closed once the run has begun");
+
+  // booster: a fixed fast burst that breaks hazards, then a grace period while the extra speed fades
+  const events = [];
+  eventsOf(boosted, events);
+  assert.ok(events.some((e) => e.type === "powerup" && e.item === "booster" && e.active), "the booster announces itself");
+  const burnSteps = Math.round(BOOSTER_SECONDS / boosted.cfg.fixedDt);
+  let burnSpeed = 0;
+  let burned = 0;
+  while (boosted.boosterSeconds > 0 && burned < burnSteps + 5) {
+    boosted.step(boosted.cfg.fixedDt); // no input: the player stays on the floor, in the path of every floor hazard
+    eventsOf(boosted, events);
+    if (burned === 0) burnSpeed = boosted.worldSpeed;
+    assert.equal(boosted.worldSpeed, burnSpeed, "the burst holds one speed");
+    burned++;
+  }
+  assert.ok(Math.abs(burned - burnSteps) <= 1, `the burst lasts BOOSTER_SECONDS (${burned} steps)`);
+  assert.ok(burnSpeed > 3 * worldSpeedAt(0, boosted.cfg), "the burst is several times the opening speed");
+  assert.ok(Math.abs(boosted.camera.x - burnSpeed * burned * boosted.cfg.fixedDt) < 1e-6, "distance covered matches speed x time");
+  const smashes = events.filter((e) => e.type === "smash").length;
+  assert.ok(smashes >= 1, "hazards in the way are broken");
+  assert.ok(!events.some((e) => e.type === "hit"), "nothing hurts during the burst");
+  assert.equal(boosted.state, GameState.RUNNING);
+  assert.ok(events.some((e) => e.type === "powerup" && e.item === "booster" && !e.active), "the end of the burst is announced");
+  assert.ok(boosted.invulnerable && boosted.boosterSeconds === 0 && boosted.graceSeconds > 1, "a grace period follows the burst");
+  let last = boosted.worldSpeed;
+  for (let i = 0; i < 60; i++) {
+    boosted.step(boosted.cfg.fixedDt);
+    assert.ok(boosted.worldSpeed < last, "speed falls back after the burst");
+    last = boosted.worldSpeed;
+  }
+  for (let i = 0; i < 60 && boosted.state === GameState.RUNNING; i++) boosted.step(boosted.cfg.fixedDt);
+  assert.ok(Math.abs(boosted.worldSpeed - cruiseAt(boosted)) < 2 || boosted.state === GameState.DEAD, "two seconds later the run is back on the difficulty curve");
+
+  // shield: absorbs exactly one hit, then a short grace period, then the next hit ends the run
+  const shielded = new Game({ ...defaultConfig(), seed: 11 });
+  shielded.shopInventory.shield = 1;
+  shielded.toggleLoadout("shield");
+  shielded.start();
+  assert.equal(shielded.shopInventory.shield, 0);
+  const hits = [];
+  let obstaclesAtSave = -1;
+  for (let i = 0; i < 6000 && shielded.state === GameState.RUNNING; i++) {
+    const before = shielded.obstacles.length;
+    shielded.step(shielded.cfg.fixedDt);
+    for (const e of shielded.consumeEvents()) {
+      if (e.type !== "hit") continue;
+      hits.push(e.savedBy);
+      if (e.savedBy === "shield") {
+        obstaclesAtSave = before - shielded.obstacles.length;
+        assert.ok(shielded.invulnerable && shielded.graceSeconds > 0.5, "the save comes with a moment of safety");
+      }
+    }
+  }
+  assert.deepStrictEqual(hits, ["shield", null], "one hit absorbed, the next one fatal");
+  assert.ok(obstaclesAtSave >= 1, "the hazard that hit the shield is removed");
+  assert.equal(shielded.state, GameState.DEAD);
+
+  // 2X coins: pays the wallet double, leaves the score and the run itself unchanged
+  const steer = (g) => {
+    const p = g.player;
+    const box = p.rect();
+    const next = g.obstacles.find((o) => o.worldX + o.width - g.camera.x > box.x - 2);
+    let target = (g.world.ceilingY() + g.world.floorY() - box.h) / 2;
+    if (next && next.worldX - g.camera.x - (box.x + box.w) < 0.9 * g.worldSpeed) {
+      const free = next.freeIntervals(g.camera.x, g.time, g.world, box.h, false);
+      if (free.length) {
+        const nearest = free.reduce((a, b) => (Math.abs((a[0] + a[1]) / 2 - p.y) <= Math.abs((b[0] + b[1]) / 2 - p.y) ? a : b));
+        target = (nearest[0] + nearest[1]) / 2;
+      }
+    }
+    g.input.isDown = p.y + p.vy * 0.16 > target;
+  };
+  const collect = (double) => {
+    const g = new Game({ ...defaultConfig(), seed: 21 });
+    if (double) { g.shopInventory.doubleCoins = 1; g.toggleLoadout("doubleCoins"); }
+    const wallet = g.totalCoins;
+    g.start();
+    for (let i = 0; i < 1500 && g.state === GameState.RUNNING; i++) { steer(g); g.step(g.cfg.fixedDt); }
+    return { earned: g.totalCoins - wallet, picked: g.coinsPicked, score: g.score, distance: g.camera.x };
+  };
+  const plain = collect(false);
+  const doubled = collect(true);
+  assert.ok(plain.picked >= 5, `the steered run collects coins (${plain.picked})`);
+  assert.equal(plain.earned, plain.picked);
+  assert.equal(doubled.earned, 2 * plain.earned, "the wallet is paid double");
+  assert.deepStrictEqual([doubled.picked, doubled.score, doubled.distance], [plain.picked, plain.score, plain.distance], "score and run are the same with or without the multiplier");
+  ok(`power-ups: booster broke ${smashes} hazards over ${Math.round(boosted.camera.x)}px, shield absorbed one hit, 2X coins paid ${doubled.earned} for ${doubled.picked} coins`);
+}
+
+// an opening searched during the results screen is the same world as a fresh start
+{
+  const opening = (prepare) => {
+    const cfg = { ...defaultConfig(), encounterMode: 1, seed: 3 };
+    const spawner = new Spawner(cfg, new World(cfg));
+    spawner.reset(3);
+    prepare(spawner, cfg);
+    cfg.seed = 77;
+    spawner.reset(77);
+    const placed = [];
+    for (let cameraX = 0; cameraX < 6000; cameraX += 40) {
+      spawner.backgroundWork(Infinity);
+      spawner.update(cameraX, 280, 0, cfg.worldStartSpeed, placed);
+    }
+    return {
+      seq: placed.map((o) => [o.id, o.type, o.worldX, o.getParts(), o.encounter?.index, o.encounter?.candidateId]),
+      sync: spawner.scheduler.stats.syncFinishes,
+    };
+  };
+  const fresh = opening(() => {});
+  assert.ok(fresh.seq.length >= 6, "the reference opening places several encounters");
+  const finished = opening((spawner) => { spawner.prepare(77); for (let i = 0; i < 4; i++) spawner.backgroundWork(Infinity, true); });
+  assert.deepStrictEqual(finished.seq, fresh.seq, "a fully pre-searched opening matches a fresh start");
+  assert.equal(finished.sync, 0, "nothing is left to finish when the run begins");
+  const partial = opening((spawner) => { spawner.prepare(77); spawner.backgroundWork(0, true); });
+  assert.deepStrictEqual(partial.seq, fresh.seq, "an opening still being searched at the retry matches too");
+  const otherSeed = opening((spawner) => { spawner.prepare(78); spawner.backgroundWork(Infinity, true); });
+  assert.deepStrictEqual(otherSeed.seq, fresh.seq, "an opening prepared for another seed is discarded");
+  const otherConfig = opening((spawner, cfg) => { spawner.prepare(77); spawner.backgroundWork(Infinity, true); cfg.searchPopulation += 2; });
+  const freshOtherConfig = opening((spawner, cfg) => { cfg.searchPopulation += 2; });
+  assert.deepStrictEqual(otherConfig.seq, freshOtherConfig.seq, "an opening prepared before a config change is discarded");
+  ok(`pre-searched opening: ${fresh.seq.length} obstacles identical with and without the head start`);
 }
 
 // live generator switch keeps the world consistent

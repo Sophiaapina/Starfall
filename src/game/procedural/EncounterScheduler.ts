@@ -57,6 +57,25 @@ export class EncounterScheduler {
     if (start) this.ensureSearching();
   }
 
+  /**
+   * take over everything another scheduler has searched, so a run can begin from an
+   * opening that was searched ahead of time; the result is the same as a fresh reset
+   * with that scheduler's seed and config, only without the wait
+   */
+  adopt(other: EncounterScheduler): void {
+    this.masterSeed = other.masterSeed;
+    this.nextIndex = other.nextIndex;
+    this.nextStartX = other.nextStartX;
+    this.nextObstacleId = other.nextObstacleId;
+    this.committed = other.committed;
+    this.ready = other.ready;
+    this.active = other.active;
+    this.log = other.log;
+    this.stats = other.stats;
+    this.archive.recent.length = 0;
+    this.archive.recent.push(...other.archive.recent);
+  }
+
   private lastPlanned(): EncounterRecord | null {
     return this.ready[this.ready.length - 1] ?? this.committed[this.committed.length - 1] ?? null;
   }

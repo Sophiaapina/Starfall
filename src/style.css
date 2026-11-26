@@ -9,6 +9,10 @@
   --accent: #4cc38a;
   --warn: #e5c07b;
   --danger: #e06c75;
+
+  /* logical canvas size, must match CANVAS_WIDTH and CANVAS_HEIGHT in gameplayConfig.ts */
+  --game-w: 960;
+  --game-h: 600;
 }
 
 * { box-sizing: border-box; }
@@ -21,6 +25,7 @@ html, body {
   font: 12px/1.45 "SF Mono", "Cascadia Code", Consolas, Menlo, monospace;
 }
 
+/* admin view: the canvas shares the row with the panel and takes the space that is left */
 #app {
   display: flex;
   gap: 10px;
@@ -28,13 +33,22 @@ html, body {
   align-items: flex-start;
 }
 
-#stage { flex: 0 0 auto; }
+#stage {
+  flex: 1 1 0;
+  min-width: 0;
+  /* the cap keeps the whole canvas and the hint line on screen */
+  max-width: calc((100vh - 48px) * var(--game-w) / var(--game-h));
+}
 
+/* the stage sets the width and the ratio sets the height; viewport.ts matches the backing store to this box */
 canvas#game {
   display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--game-w) / var(--game-h);
   background: #101216;
-  border: 1px solid var(--line);
-  image-rendering: pixelated;
+  /* an outline adds no layout size, so the element box is exactly the drawing area for pointer math */
+  outline: 1px solid var(--line);
   touch-action: none;
   user-select: none;
 }
@@ -45,7 +59,38 @@ canvas#game {
   font-size: 11px;
 }
 
-body.player-view #hint { display: none; }
+/* player view: the game is the largest 16:10 box that fits the window, centered, with themed bars around it */
+body.player-view {
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: radial-gradient(120% 90% at 50% 35%, #17123a 0%, #0a0a1f 55%, #05060d 100%);
+}
+
+body.player-view #app {
+  height: 100vh;
+  height: 100dvh;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  /* presses on the bars thrust during a run (main.ts), so they must not scroll or zoom */
+  touch-action: none;
+  user-select: none;
+}
+
+body.player-view #stage {
+  flex: 0 0 auto;
+  width: min(100vw, 100vh * var(--game-w) / var(--game-h));
+  width: min(100vw, 100dvh * var(--game-w) / var(--game-h));
+  max-width: none;
+}
+
+body.player-view canvas#game {
+  outline: 0;
+  box-shadow: 0 0 0 1px rgba(94, 240, 255, 0.16), 0 0 70px rgba(124, 84, 255, 0.2);
+}
+
+body.player-view #hint,
+body.player-view #panel { display: none; }
 
 #panel {
   flex: 1 1 340px;
@@ -166,20 +211,16 @@ button.danger {
 .status-line { color: var(--text-dim); margin: 2px 0; }
 .status-line b { color: var(--text); }
 
+/* admin view on a narrow window: the panel moves under the canvas */
 @media (max-width: 1450px) {
-  #app {
+  body:not(.player-view) #app {
     flex-direction: column;
     align-items: stretch;
   }
 
-  #stage {
+  body:not(.player-view) #stage {
+    flex: 0 0 auto;
     width: 100%;
-    max-width: 960px;
-  }
-
-  canvas#game {
-    width: 100%;
-    height: auto;
   }
 
   #panel {

@@ -8,7 +8,9 @@ import type { SeededRandom } from "./Random.js";
 
 export function computeDifficulty(distance: number, cfg: GameplayConfig): number {
   // one shared scalar keeps speed, spacing, gaps, and movers on the same curve
-  return clamp(distance / cfg.difficultyDistance, 0, 1);
+  // ease-out: the run gets interesting quickly, then the last stretch to full difficulty is long
+  const progress = clamp(distance / cfg.difficultyDistance, 0, 1);
+  return 1 - (1 - progress) * (1 - progress);
 }
 
 export function worldSpeedAt(difficulty: number, cfg: GameplayConfig): number {

@@ -1,0 +1,295 @@
+{ "frames": [
+   {
+    "filename": "astronaut 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 100
+   },
+   {
+    "filename": "astronaut 1.aseprite",
+    "frame": { "x": 96, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 2.aseprite",
+    "frame": { "x": 192, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 3.aseprite",
+    "frame": { "x": 288, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 100
+   },
+   {
+    "filename": "astronaut 4.aseprite",
+    "frame": { "x": 384, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 5.aseprite",
+    "frame": { "x": 480, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 6.aseprite",
+    "frame": { "x": 576, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 133
+   },
+   {
+    "filename": "astronaut 7.aseprite",
+    "frame": { "x": 672, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 117
+   },
+   {
+    "filename": "astronaut 8.aseprite",
+    "frame": { "x": 768, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 133
+   },
+   {
+    "filename": "astronaut 9.aseprite",
+    "frame": { "x": 864, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 133
+   },
+   {
+    "filename": "astronaut 10.aseprite",
+    "frame": { "x": 960, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 117
+   },
+   {
+    "filename": "astronaut 11.aseprite",
+    "frame": { "x": 1056, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 133
+   },
+   {
+    "filename": "astronaut 12.aseprite",
+    "frame": { "x": 1152, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 13.aseprite",
+    "frame": { "x": 1248, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 67
+   },
+   {
+    "filename": "astronaut 14.aseprite",
+    "frame": { "x": 1344, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 15.aseprite",
+    "frame": { "x": 1440, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 16.aseprite",
+    "frame": { "x": 1536, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 17.aseprite",
+    "frame": { "x": 1632, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 67
+   },
+   {
+    "filename": "astronaut 18.aseprite",
+    "frame": { "x": 1728, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 19.aseprite",
+    "frame": { "x": 1824, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 83
+   },
+   {
+    "filename": "astronaut 20.aseprite",
+    "frame": { "x": 1920, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 67
+   },
+   {
+    "filename": "astronaut 21.aseprite",
+    "frame": { "x": 2016, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 150
+   },
+   {
+    "filename": "astronaut 22.aseprite",
+    "frame": { "x": 2112, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 100
+   },
+   {
+    "filename": "astronaut 23.aseprite",
+    "frame": { "x": 2208, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 50
+   },
+   {
+    "filename": "astronaut 24.aseprite",
+    "frame": { "x": 2304, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 117
+   },
+   {
+    "filename": "astronaut 25.aseprite",
+    "frame": { "x": 2400, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 133
+   },
+   {
+    "filename": "astronaut 26.aseprite",
+    "frame": { "x": 2496, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 100
+   },
+   {
+    "filename": "astronaut 27.aseprite",
+    "frame": { "x": 2592, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 117
+   },
+   {
+    "filename": "astronaut 28.aseprite",
+    "frame": { "x": 2688, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 100
+   },
+   {
+    "filename": "astronaut 29.aseprite",
+    "frame": { "x": 2784, "y": 0, "w": 96, "h": 176 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 176 },
+    "sourceSize": { "w": 96, "h": 176 },
+    "duration": 117
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.6-arm64",
+  "image": "astronaut_flame.png",
+  "format": "RGBA8888",
+  "size": { "w": 2880, "h": 176 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "thrust", "from": 0, "to": 5, "direction": "forward", "color": "#5ec6dcff" },
+   { "name": "fall", "from": 6, "to": 11, "direction": "forward", "color": "#8862bdff" },
+   { "name": "run", "from": 12, "to": 19, "direction": "forward", "color": "#3896b9ff" },
+   { "name": "land", "from": 20, "to": 22, "direction": "forward", "repeat": "1", "color": "#93e4f0ff" },
+   { "name": "hit", "from": 23, "to": 25, "direction": "forward", "repeat": "1", "color": "#b78ae0ff" },
+   { "name": "tumble", "from": 26, "to": 29, "direction": "forward", "color": "#5c3f82ff" }
+  ],
+  "layers": [
+   { "name": "flame", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+   { "name": "torso_pivot", "color": "#ff00ffff", "keys": [{ "frame": 0, "bounds": {"x": 37, "y": 42, "w": 39, "h": 62 }, "pivot": {"x": 19, "y": 30 } }] }
+  ]
+ }
+}

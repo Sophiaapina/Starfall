@@ -1,0 +1,82 @@
+{
+ "family": "lasergate",
+ "kind": "column",
+ "sheet": "/Users/bto/orca/workspaces/Starfall/rework-polish/art/hazards/export/lasergate.png",
+ "size": [
+  576,
+  208
+ ],
+ "coverage_min_opaque_px_of_120": {
+  "tip (rows 60-95, after the round-B taper)": {
+   "min": 57,
+   "at_row": 60,
+   "per_frame": [
+    57,
+    57,
+    57,
+    57
+   ]
+  },
+  "tip taper zone (rows 16-59, info only)": {
+   "min": 44,
+   "at_row": 16,
+   "per_frame": [
+    44,
+    44,
+    44,
+    44
+   ]
+  },
+  "shaft (rows 96-159)": {
+   "min": 57,
+   "at_row": 117,
+   "per_frame": [
+    57,
+    57,
+    57,
+    57
+   ]
+  },
+  "base (rows 160-207)": {
+   "min": 66,
+   "at_row": 174,
+   "per_frame": [
+    66,
+    66,
+    66,
+    66
+   ]
+  }
+ },
+ "joins_identical_all_frames": {
+  "tip bottom row 95 == shaft bottom row 63 (so tip->shaft equals shaft->shaft)": true
+ },
+ "seam_row_change_vs_typical_adjacent_row_change": [
+  [
+   19.3,
+   9.4
+  ],
+  [
+   19.9,
+   9.5
+  ],
+  [
+   19.3,
+   9.4
+  ],
+  [
+   17.6,
+   9.0
+  ]
+ ],
+ "collar_rows_160-163_min_opaque": 76,
+ "max_px_outside_lethal_x_per_frame": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "semi_transparent_px": 0,
+ "colours_used": 30,
+ "off_palette": 0
+}

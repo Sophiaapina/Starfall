@@ -1,0 +1,82 @@
+{
+ "family": "tesla",
+ "kind": "column",
+ "sheet": "/Users/bto/orca/workspaces/Starfall/rework-polish/art/hazards/export/tesla.png",
+ "size": [
+  576,
+  208
+ ],
+ "coverage_min_opaque_px_of_120": {
+  "tip (rows 60-95, after the round-B taper)": {
+   "min": 6,
+   "at_row": 90,
+   "per_frame": [
+    7,
+    6,
+    6,
+    6
+   ]
+  },
+  "tip taper zone (rows 16-59, info only)": {
+   "min": 6,
+   "at_row": 19,
+   "per_frame": [
+    6,
+    8,
+    8,
+    10
+   ]
+  },
+  "shaft (rows 96-159)": {
+   "min": 5,
+   "at_row": 98,
+   "per_frame": [
+    7,
+    5,
+    6,
+    6
+   ]
+  },
+  "base (rows 160-207)": {
+   "min": 5,
+   "at_row": 207,
+   "per_frame": [
+    5,
+    5,
+    5,
+    5
+   ]
+  }
+ },
+ "joins_identical_all_frames": {
+  "tip bottom row 95 == shaft bottom row 63 (so tip->shaft equals shaft->shaft)": true
+ },
+ "seam_row_change_vs_typical_adjacent_row_change": [
+  [
+   12.0,
+   31.2
+  ],
+  [
+   13.5,
+   27.2
+  ],
+  [
+   13.9,
+   28.1
+  ],
+  [
+   9.2,
+   29.5
+  ]
+ ],
+ "collar_rows_160-163_min_opaque": 20,
+ "max_px_outside_lethal_x_per_frame": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "semi_transparent_px": 0,
+ "colours_used": 40,
+ "off_palette": 0
+}

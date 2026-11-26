@@ -51,7 +51,7 @@ const SECTIONS: Array<{ title: string; sliders: SliderDef[] }> = [
     sliders: [
       { key: "worldStartSpeed", label: "start speed", min: 50, max: 1200, step: 10, format: f0, hint: "px/s @ d=0" },
       { key: "worldMaxSpeed", label: "max speed", min: 50, max: 1600, step: 10, format: f0, hint: "px/s @ d=1" },
-      { key: "difficultyDistance", label: "difficulty dist", min: 1000, max: 60000, step: 500, format: f0, hint: "px for d: 0->1" },
+      { key: "difficultyDistance", label: "difficulty dist", min: 1000, max: 120000, step: 1000, format: f0, hint: "px for d: 0->1" },
     ],
   },
   {

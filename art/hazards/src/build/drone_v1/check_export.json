@@ -1,0 +1,75 @@
+{
+ "family": "drone",
+ "kind": "floater",
+ "sheet": "/Users/bto/orca/workspaces/Starfall/rework-polish/art/hazards/export/drone.png",
+ "size": [
+  576,
+  152
+ ],
+ "coverage_min_opaque_px_of_120": {
+  "top (rows 40-51, after the 28-row taper)": {
+   "min": 120,
+   "at_row": 40,
+   "per_frame": [
+    120,
+    120,
+    120,
+    120
+   ]
+  },
+  "top taper zone (rows 12-39, info only)": {
+   "min": 22,
+   "at_row": 12,
+   "per_frame": [
+    22,
+    22,
+    22,
+    22
+   ]
+  },
+  "mid (rows 52-99)": {
+   "min": 120,
+   "at_row": 52,
+   "per_frame": [
+    120,
+    120,
+    120,
+    120
+   ]
+  },
+  "bottom (rows 100-111, before the 28-row taper)": {
+   "min": 120,
+   "at_row": 100,
+   "per_frame": [
+    120,
+    120,
+    120,
+    120
+   ]
+  },
+  "bottom taper zone (rows 112-139, info only)": {
+   "min": 39,
+   "at_row": 139,
+   "per_frame": [
+    43,
+    39,
+    43,
+    39
+   ]
+  }
+ },
+ "joins_identical_all_frames": {
+  "top bottom row 51 == mid bottom row 47 (so top->mid equals mid->mid)": true,
+  "top rows 36-51 == mid rows 32-47 (mid pattern is 48-periodic)": true
+ },
+ "collar_rows_100-103_min_opaque": 120,
+ "max_px_outside_lethal_x_per_frame": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "semi_transparent_px": 0,
+ "colours_used": 16,
+ "off_palette": 0
+}

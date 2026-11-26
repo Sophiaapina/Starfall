@@ -1,0 +1,65 @@
+{
+ "family": "crystal",
+ "kind": "column",
+ "sheet": "/Users/bto/orca/workspaces/Starfall/rework-polish/art/hazards/export/crystal.png",
+ "size": [
+  576,
+  208
+ ],
+ "coverage_min_opaque_px_of_120": {
+  "tip (rows 44-95, after the 28-row taper)": {
+   "min": 120,
+   "at_row": 44,
+   "per_frame": [
+    120,
+    120,
+    120,
+    120
+   ]
+  },
+  "tip taper zone (rows 16-43, info only)": {
+   "min": 1,
+   "at_row": 16,
+   "per_frame": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "shaft (rows 96-159)": {
+   "min": 120,
+   "at_row": 96,
+   "per_frame": [
+    120,
+    120,
+    120,
+    120
+   ]
+  },
+  "base (rows 160-207)": {
+   "min": 120,
+   "at_row": 160,
+   "per_frame": [
+    120,
+    120,
+    120,
+    120
+   ]
+  }
+ },
+ "joins_identical_all_frames": {
+  "tip bottom row 95 == shaft bottom row 63 (so tip->shaft equals shaft->shaft)": true,
+  "tip rows 80-95 == shaft rows 48-63 (shaft pattern is 64-periodic)": true
+ },
+ "collar_rows_160-163_min_opaque": 120,
+ "max_px_outside_lethal_x_per_frame": [
+  176,
+  176,
+  176,
+  176
+ ],
+ "semi_transparent_px": 0,
+ "colours_used": 16,
+ "off_palette": 0
+}

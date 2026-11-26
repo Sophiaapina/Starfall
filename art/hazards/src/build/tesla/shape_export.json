@@ -1,0 +1,21 @@
+{
+ "max_rows_without_bright_px_in_a_third (tip+shaft, all heights/frames)": 24,
+ "shaft bright x range per frame (must reach <=23 and >=120)": [
+  [
+   13,
+   129
+  ],
+  [
+   16,
+   125
+  ],
+  [
+   16,
+   129
+  ],
+  [
+   14,
+   129
+  ]
+ ]
+}

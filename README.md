@@ -17,12 +17,12 @@ The game combines physics-based movement, procedural generation, obstacle encoun
 - **Progressive difficulty:** The challenge evolves as the player travels farther.
 - **Coin collection:** Gather coins during each run and use them in the in-game shop.
 - **Power-ups:**
-  - Shield: Protect yourself from collisions.
-  - Revive: Get another chance after failing.
-  - Double Coins: Increase the value of collected coins.
-  - Booster: Activate additional propulsion.
+  - Shield: Absorbs one hit during the run.
+  - Revive: Continue the same run after a crash, from the results screen.
+  - Double Coins: Every coin is worth double for one run.
+  - Booster: Start the run with a short invincible burst that smashes through hazards.
 - **Game progression:** Track distance, score, and best runs.
-- **Audio:** Background music, sound effects, and booster audio.
+- **Audio:** Menu and in-run music that reacts to the run, a jetpack sound, and feedback sounds for coins, near misses, landings and hits.
 - **Visual effects:** Animated game elements, particle effects, and visual feedback.
 - **Debug tools:** Inspect physics, collisions, trajectories, and procedural encounters.
 
@@ -64,6 +64,10 @@ npm run verify
 | Mouse click | Activate jetpack |
 | Touch | Activate jetpack |
 | Release input | Let gravity take over |
+| 1 / 2 / 3 | On the start screen: pick Shield, 2X Coins or Booster for the next run |
+| Space / Enter | After a crash: skip the tumble, then retry |
+| Escape | After a crash: back to the start screen. In the shop: close it |
+| F9 | Switch between the player view and the tuning lab |
 | F1 | Toggle debug overlay |
 | F2 | Show colliders |
 | F3 | Show physics vectors |
@@ -80,7 +84,7 @@ The debug panel also provides slow motion, simulation speed, physics presets, se
 
 Coins are collectible rewards generated throughout the game. Players can accumulate coins and spend them in the shop.
 
-Power-ups introduce additional gameplay possibilities and help players survive longer runs.
+Shield, 2X Coins and Booster are bought in the shop and picked on the start screen before a run; each pick is spent when that run begins. Revive is offered on the results screen after a crash.
 
 ## 🌌 Procedural encounter generation
 
@@ -148,6 +152,21 @@ src/
       EncounterScheduler.ts
       CandidateGenerator.ts
 
+  render/
+    GameRenderer.ts
+    WorldLayer.ts
+    HazardKit.ts
+    PlayerSprite.ts
+    Effects.ts
+    Hud.ts
+    Menus.ts
+    layout.ts
+    panels.ts
+    images.ts
+
+  audio/
+    AudioEngine.ts
+
   debug/
     DebugRenderer.ts
     DebugPanel.ts
@@ -155,11 +174,14 @@ src/
     TrajectoryPredictor.ts
     CandidateLab.ts
 
-  game/
-    AudioManager.ts
-
   main.ts
+  viewport.ts
   style.css
+
+art/
+  player/
+  hazards/
+  audio/
 
 assets/
   audio/

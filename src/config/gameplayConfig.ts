@@ -39,7 +39,8 @@ export interface GameplayConfig {
   /** scroll speed at difficulty one */
   worldMaxSpeed: number;
   /**
-   * distance used to move difficulty from zero to one
+   * distance used to move difficulty from zero to one, along an ease-out curve
+   * 70000 px is about two minutes of flight: a third of the way at 35 s, two thirds at one minute
    */
   difficultyDistance: number;
 
@@ -120,7 +121,7 @@ export function defaultConfig(): GameplayConfig {
 
     worldStartSpeed: 320,
     worldMaxSpeed: 760,
-    difficultyDistance: 12000,
+    difficultyDistance: 70000,
 
     playerWidth: 34,
     playerHeight: 44,
